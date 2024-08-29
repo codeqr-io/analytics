@@ -1,14 +1,14 @@
 import type { AllowedPropertyValues } from './types';
 
-export const CLICK_ID_COOKIE_NAME = 'dclid';
+export const CLICK_ID_COOKIE_NAME = 'cclid';
 export const AFFILIATE_PARAM_KEY = 'via';
-export const AFFILIATE_COOKIE_NAME = 'daff';
+export const AFFILIATE_COOKIE_NAME = 'caff';
 
 export function getScriptSrc(): string {
   return (
     process.env.NEXT_PUBLIC_CODEQR_ANALYTICS_SCRIPT_SRC ||
     process.env.CODEQR_ANALYTICS_SCRIPT_SRC ||
-    'https://www.codeqr-analytics.pages.dev/analytics/script.js'
+    'https://codeqr-analytics.pages.dev/analytics/script.js'
   );
 }
 

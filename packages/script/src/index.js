@@ -1,5 +1,5 @@
 (function () {
-  const CLICK_ID = 'dclid';
+  const CLICK_ID = 'cclid';
   const COOKIE_EXPIRES = 90 * 24 * 60 * 60 * 1000; // 90 days
   const defaultOptions = {
     domain: null,
