@@ -1,0 +1,29 @@
+name: Deploy Analytics Script to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/script/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install
+        uses: ./.github/composite-actions/install
+
+      - name: Install Dependencies and Build
+        run: pnpm --filter @codeqr/analytics-script build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_PAGES_API_KEY }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: 'codeqr-cdn'
+          directory: 'packages/script/dist'

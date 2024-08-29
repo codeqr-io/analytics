@@ -1,0 +1,12 @@
+{
+  "name": "@codeqr/analytics-script",
+  "version": "0.0.6",
+  "main": "src/index.js",
+  "scripts": {
+    "prebuild": "mkdir -p dist/analytics",
+    "build": "pnpm run prebuild && terser src/index.js -o dist/analytics/script.js -c -m"
+  },
+  "devDependencies": {
+    "terser": "^5.7.0"
+  }
+}
