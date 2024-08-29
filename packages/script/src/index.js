@@ -17,7 +17,9 @@
     for (let i = 0; i < scripts.length; i++) {
       if (
         scripts[i].src &&
-        scripts[i].src.includes('codeqr.com/analytics/script.js')
+        scripts[i].src.includes(
+          'codeqr-analytics.pages.dev/analytics/script.js',
+        )
       ) {
         return scripts[i];
       }

@@ -8,7 +8,7 @@ export function getScriptSrc(): string {
   return (
     process.env.NEXT_PUBLIC_CODEQR_ANALYTICS_SCRIPT_SRC ||
     process.env.CODEQR_ANALYTICS_SCRIPT_SRC ||
-    'https://www.codeqr.com/analytics/script.js'
+    'https://www.codeqr-analytics.pages.dev/analytics/script.js'
   );
 }
 
