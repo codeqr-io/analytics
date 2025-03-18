@@ -1,13 +1,13 @@
 {
   "name": "@codeqr/analytics",
-  "version": "0.0.15",
+  "version": "0.0.27",
   "description": "",
   "keywords": [
     "analytics",
     "codeqr"
   ],
   "repository": {
-    "url": "github:losenvo/codeqr-analytics",
+    "url": "github:codeqr/analytics",
     "directory": "packages/web"
   },
   "license": "MPL-2.0",

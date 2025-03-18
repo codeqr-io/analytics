@@ -1,11 +1,60 @@
 export type AllowedPropertyValues = string | number | boolean | null;
 
 export interface AnalyticsProps {
+  /**
+   * The API endpoint to send analytics data to.
+   * @default 'https://api.codeqr.io'
+   */
+  apiHost?: string;
+
+  /**
+   * This is a JSON object that configures the domains that CodeQR will track.
+   *
+   * - `refer`: The CodeQR short domain for referral program client-side click tracking (previously `shortDomain`). @see: https://d.to/clicks/refer
+   * - `site`: The CodeQR short domain for tracking site visits. @see: https://d.to/clicks/site
+   * - `outbound`: An array of domains for cross-domain tracking. When configured, the existing `codeqr_id` cookie
+   *               will be automatically appended to all outbound links targeting these domains to enable
+   *               cross-domain tracking across different applications.
+   *
+   * @example {
+   *   refer: "refer.codeqr.io",
+   *   site: "site.codeqr.io",
+   *   outbound: "git.new"
+   * }
+   */
+  domainsConfig?: {
+    refer?: string;
+    site?: string;
+    outbound?: string | string[];
+  };
+
+  /**
+   * The custom domain you're using on CodeQR for your short links (for client-side click tracking).
+   * @example 'go.example.com'
+   * @deprecated Use domainsConfig.refer instead
+   */
+  shortDomain?: string;
+
+  /**
+   * The Attribution Model to use for the analytics event.
+   *
+   * @default 'last-click'
+   *
+   * - `first-click` - The first click model gives all the credit to the first touchpoint in the customer journey.
+   * - `last-click` - The last click model gives all the credit to the last touchpoint in the customer journey.
+   */
+  attributionModel?: 'first-click' | 'last-click';
+
+  /**
+   * The cookie options to use for the analytics event.
+   */
   cookieOptions?: {
     /**
      * Specifies the value for the {@link https://tools.ietf.org/html/rfc6265#section-5.2.3|Domain Set-Cookie attribute}. By default, no
-     * domain is set, and most clients will consider the cookie to apply to only
-     * the current domain.
+     * domain is set, and most clients will consider the cookie to apply to only the current domain.
+     * By default, the domain is set to the current hostname (including all subdomains).
+     *
+     * @default `.` + window.location.hostname
      */
     domain?: string | undefined;
 
@@ -87,14 +136,20 @@ export interface AnalyticsProps {
   };
 
   /**
-   * The Attribution Model to use for the analytics event.
+   * The query parameter to listen to for client-side click-tracking (e.g. `?via=john`, `?ref=jane`).
    *
-   * @default 'last-click'
-   *
-   * - `first-click` - The first click model gives all the credit to the first touchpoint in the customer journey.
-   * - `last-click` - The last click model gives all the credit to the last touchpoint in the customer journey.
+   * @default 'via'
    */
-  attributionModel?: 'first-click' | 'last-click';
+  queryParam?: string;
+
+  /**
+   * Custom properties to pass to the script.
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLScriptElement
+   */
+  scriptProps?: React.DetailedHTMLProps<
+    React.ScriptHTMLAttributes<HTMLScriptElement>,
+    HTMLScriptElement
+  >;
 }
 
 export interface ClickApiResponse {

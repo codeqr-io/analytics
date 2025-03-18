@@ -14,11 +14,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>{children}</body>
-      <CodeQRAnalytics
-        cookieOptions={{
-          domain: '.example.com', // Cross-domain cookie sharing
-        }}
-      />
+      <CodeQRAnalytics />
     </html>
   );
 }
