@@ -9,7 +9,7 @@ function inject(props: AnalyticsProps): void {
   if (!isBrowser()) return;
 
   // Determine script source based on enabled features
-  const baseUrl = 'https://codeqr-analytics.pages.dev/analytics/script';
+  const baseUrl = 'https://cdn.codeqr.io/analytics/script';
   const features = [];
 
   if (props.domainsConfig?.site) features.push('site-visit');
