@@ -2,7 +2,7 @@
 
 This example shows you how you can use the `@codeqr/analytics` package with:
 
-- [Client-side click tracking](https://codeqr.io/docs/conversions/clicks/introduction#client-side-click-tracking) for tracking clicks with query parameters in lieu of short links
+- [Client-side click tracking](https://codeqr.mintlify.app/conversions/clicks/introduction#client-side-click-tracking) for tracking clicks with query parameters in lieu of short links
 - A reverse proxy to avoid getting blocked by ad blockers
 
 ```ts app/layout.tsx
@@ -16,7 +16,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>{children}</body>
-      <CodeQRAnalytics apiHost="/_proxy/codeqr" shortDomain="go.company.com" />
+      <CodeQRAnalytics 
+        apiHost="/_proxy/codeqr" 
+         domainsConfig={{
+          refer: 'go.company.com',
+        }}
+       />
     </html>
   );
 }

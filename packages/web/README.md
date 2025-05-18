@@ -44,8 +44,8 @@ The API host to use for tracking. This is useful for setting up reverse proxies 
 
 This is a JSON object that configures the domains that CodeQR will track.
 
-- `refer`: The CodeQR short domain for [referral program client-side click tracking](https://d.to/clicks/refer) (previously `shortDomain`).
-- `site`: The CodeQR short domain for [tracking site visits](https://d.to/clicks/site).
+- `refer`: The CodeQR short domain for [referral program client-side click tracking](https://codeqr.link/clicks/refer) (previously `shortDomain`).
+- `site`: The CodeQR short domain for [tracking site visits](https://codeqr.link/clicks/site).
 - `outbound`: An array of domains for cross-domain tracking. When configured, the existing `cq_id` cookie will be automatically appended to all outbound links targeting these domains to enable cross-domain tracking across different applications.
 
 ### `shortDomain`

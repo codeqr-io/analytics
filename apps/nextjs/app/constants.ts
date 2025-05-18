@@ -1,0 +1,2 @@
+export const CODEQR_ANALYTICS_SCRIPT_URL =
+  process.env.CODEQR_ANALYTICS_SCRIPT_URL || '';

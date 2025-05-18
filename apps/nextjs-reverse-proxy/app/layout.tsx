@@ -18,7 +18,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>{children}</body>
-      <CodeQRAnalytics apiHost="/_proxy/codeqr" shortDomain="go.company.com" />
+      <CodeQRAnalytics
+        apiHost="/_proxy/codeqr"
+        domainsConfig={{
+          refer: 'go.company.com',
+        }}
+      />
     </html>
   );
 }

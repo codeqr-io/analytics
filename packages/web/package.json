@@ -7,7 +7,7 @@
     "codeqr"
   ],
   "repository": {
-    "url": "github:codeqr/analytics",
+    "url": "github:codeqr-io/analytics",
     "directory": "packages/web"
   },
   "license": "MPL-2.0",

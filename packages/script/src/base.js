@@ -5,15 +5,13 @@
   console.log('[CodeQR Analytics] Script initialized.');
 
   const CODEQR_ID_VAR = 'cq_id';
+  const CODEQR_PARTNER_COOKIE = 'cq_partner_data';
   const COOKIE_EXPIRES = 90 * 24 * 60 * 60 * 1000; // 90 days
   const HOSTNAME = window.location.hostname;
-
-  console.log('[CodeQR Analytics] Hostname:', HOSTNAME);
 
   // Common script attributes
   const API_HOST =
     script.getAttribute('data-api-host') || 'https://api.codeqr.io';
-  console.log('[CodeQR Analytics] API Host:', API_HOST);
 
   const COOKIE_OPTIONS = (() => {
     const defaultOptions = {
@@ -27,13 +25,7 @@
     };
 
     const opts = script.getAttribute('data-cookie-options');
-    if (!opts) {
-      console.log(
-        '[CodeQR Analytics] Using default cookie options:',
-        defaultOptions,
-      );
-      return defaultOptions;
-    }
+    if (!opts) return defaultOptions;
 
     const parsedOpts = JSON.parse(opts);
     if (parsedOpts.expiresInDays) {
@@ -43,60 +35,48 @@
       delete parsedOpts.expiresInDays;
     }
 
-    console.log('[CodeQR Analytics] Parsed cookie options:', {
-      ...defaultOptions,
-      ...parsedOpts,
-    });
     return { ...defaultOptions, ...parsedOpts };
   })();
 
   const DOMAINS_CONFIG = (() => {
+    // here, we fetch the old data-short-domain in case it's needed
+    const oldReferDomain = script.getAttribute('data-short-domain');
+    // latest format with data-domains
     const domainsAttr = script.getAttribute('data-domains');
     if (domainsAttr) {
       try {
-        const parsedDomains = JSON.parse(domainsAttr);
-        console.log('[CodeQR Analytics] Parsed domains config:', parsedDomains);
-        return parsedDomains;
+        const domainsConfig = JSON.parse(domainsAttr);
+        return {
+          ...domainsConfig,
+          // we should use the domainsConfig.refer if it exists,
+          // otherwise we fallback to the old data-short-domain if it exists
+          refer: domainsConfig.refer || oldReferDomain,
+        };
       } catch (e) {
-        console.warn(
-          '[CodeQR Analytics] Failed to parse domains config, falling back to old format.',
-        );
+        // Fall back to old format if JSON parse fails
       }
     }
-    const fallbackConfig = {
-      refer: script.getAttribute('data-short-domain'),
+    // Backwards compatibility only for data-short-domain
+    return {
+      refer: oldReferDomain,
     };
-    console.log('[CodeQR Analytics] Fallback domains config:', fallbackConfig);
-    return fallbackConfig;
   })();
 
   const SHORT_DOMAIN = DOMAINS_CONFIG.refer;
-  console.log('[CodeQR Analytics] Short domain:', SHORT_DOMAIN);
-
   const ATTRIBUTION_MODEL =
     script.getAttribute('data-attribution-model') || 'last-click';
-  console.log('[CodeQR Analytics] Attribution model:', ATTRIBUTION_MODEL);
-
   const QUERY_PARAM = script.getAttribute('data-query-param') || 'via';
   const QUERY_PARAM_VALUE = new URLSearchParams(location.search).get(
     QUERY_PARAM,
-  );
-  console.log(
-    '[CodeQR Analytics] Query param:',
-    QUERY_PARAM,
-    'Value:',
-    QUERY_PARAM_VALUE,
   );
 
   // Cookie management
   const cookieManager = {
     get(key) {
-      const value = document.cookie
+      return document.cookie
         .split(';')
         .map((c) => c.trim().split('='))
         .find(([k]) => k === key)?.[1];
-      console.log(`[CodeQR Analytics] Get cookie: ${key} =`, value);
-      return value;
     },
 
     set(key, value) {
@@ -106,23 +86,14 @@
         .join('; ');
 
       document.cookie = `${key}=${value}; ${cookieString}`;
-      console.log(`[CodeQR Analytics] Set cookie: ${key} = ${value}`);
     },
   };
 
   let clientClickTracked = false;
   // Track click and set cookie
   function trackClick(identifier) {
-    if (clientClickTracked) {
-      console.log('[CodeQR Analytics] Click already tracked, skipping.');
-      return;
-    }
+    if (clientClickTracked) return;
     clientClickTracked = true;
-
-    console.log(
-      '[CodeQR Analytics] Tracking click with identifier:',
-      identifier,
-    );
 
     fetch(`${API_HOST}/track/click`, {
       method: 'POST',
@@ -134,58 +105,52 @@
         referrer: document.referrer,
       }),
     })
-      .then((res) => {
-        if (res.ok) {
-          console.log('[CodeQR Analytics] Click tracked successfully.');
-          return res.json();
-        } else {
-          console.error('[CodeQR Analytics] Failed to track click.');
-        }
-      })
+      .then((res) => res.ok && res.json())
       .then((data) => {
         if (data) {
-          console.log(
-            '[CodeQR Analytics] Received click tracking response:',
-            data,
-          );
           cookieManager.set(CODEQR_ID_VAR, data.clickId);
+          // if partner data is present, set it as codeqr_partner_data cookie
+          if (data.partner) {
+            // Encode only the image URL and name to handle special characters
+            const encodedData = {
+              ...data,
+              partner: {
+                ...data.partner,
+                name: encodeURIComponent(data.partner.name),
+                image: encodeURIComponent(data.partner.image),
+              },
+            };
+
+            cookieManager.set(
+              CODEQR_PARTNER_COOKIE,
+              JSON.stringify(encodedData),
+            );
+          }
         }
-      })
-      .catch((error) => {
-        console.error('[CodeQR Analytics] Error tracking click:', error);
       });
   }
 
   // Initialize tracking
   function init() {
-    console.log('[CodeQR Analytics] Initializing tracking...');
     const params = new URLSearchParams(location.search);
 
     const shouldSetCookie = () => {
-      const result =
-        !cookieManager.get(CODEQR_ID_VAR) ||
-        ATTRIBUTION_MODEL !== 'first-click';
-      console.log('[CodeQR Analytics] Should set cookie:', result);
-      return result;
+      // only set cookie if there's no existing click id
+      // or if the attribution model is last-click
+      return (
+        !cookieManager.get(CODEQR_ID_VAR) || ATTRIBUTION_MODEL !== 'first-click'
+      );
     };
 
-    // Direct click ID in URL
+    // CodeQR Conversions tracking (via direct click ID in URL)
     const clickId = params.get(CODEQR_ID_VAR);
     if (clickId && shouldSetCookie()) {
-      console.log('[CodeQR Analytics] Found click ID in URL:', clickId);
       cookieManager.set(CODEQR_ID_VAR, clickId);
-      return;
     }
 
-    // Track via query param
-    if (QUERY_PARAM_VALUE && SHORT_DOMAIN) {
-      console.log(
-        '[CodeQR Analytics] Found query param value:',
-        QUERY_PARAM_VALUE,
-      );
-      if (shouldSetCookie()) {
-        trackClick(QUERY_PARAM_VALUE);
-      }
+    // CodeQR Partners tracking (via query param e.g. ?via=partner_id)
+    if (QUERY_PARAM_VALUE && SHORT_DOMAIN && shouldSetCookie()) {
+      trackClick(QUERY_PARAM_VALUE);
     }
   }
 

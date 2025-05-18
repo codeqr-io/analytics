@@ -10,8 +10,8 @@ export interface AnalyticsProps {
   /**
    * This is a JSON object that configures the domains that CodeQR will track.
    *
-   * - `refer`: The CodeQR short domain for referral program client-side click tracking (previously `shortDomain`). @see: https://d.to/clicks/refer
-   * - `site`: The CodeQR short domain for tracking site visits. @see: https://d.to/clicks/site
+   * - `refer`: The CodeQR short domain for referral program client-side click tracking (previously `shortDomain`). @see: https://codeqr.link/clicks/refer
+   * - `site`: The CodeQR short domain for tracking site visits. @see: https://codeqr.link/clicks/site
    * - `outbound`: An array of domains for cross-domain tracking. When configured, the existing `cq_id` cookie
    *               will be automatically appended to all outbound links targeting these domains to enable
    *               cross-domain tracking across different applications.

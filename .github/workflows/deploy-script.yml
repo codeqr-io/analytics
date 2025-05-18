@@ -26,3 +26,9 @@ jobs:
           command: pages deploy dist --project-name=codeqr-cdn --commit-dirty=true
           workingDirectory: packages/script
           packageManager: pnpm
+
+      - name: Dispatch deployment event
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          event-type: analytics-script-deployed
+          client-payload: '{"deployment_url": "${{ steps.cloudflare-deploy.outputs.deployment-url }}"}'

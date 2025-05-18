@@ -2,7 +2,7 @@
   "name": "analytics",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/losenvo/codeqr-analytics.git"
+    "url": "git+https://github.com/codeqr-io/analytics.git"
   },
   "license": "MPL-2.0",
   "scripts": {
