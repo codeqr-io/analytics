@@ -51,6 +51,9 @@ importers:
       '@types/react-dom':
         specifier: ^18
         version: 18.2.18
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.5.0
       eslint:
         specifier: ^8
         version: 8.43.0
@@ -3118,6 +3121,14 @@ packages:
     engines: { node: '>=6.0.0' }
     dependencies:
       esutils: 2.0.3
+    dev: true
+
+  /dotenv@16.5.0:
+    resolution:
+      {
+        integrity: sha512-m/C+AwOAr9/W1UOIZUo232ejMNnJAJtYQjUbHoNTBNTJSvqzzDh7vnrei3o3r3m9blf6ZoDkvcw0VmozNRFJxg==,
+      }
+    engines: { node: '>=12' }
     dev: true
 
   /eastasianwidth@0.2.0:
