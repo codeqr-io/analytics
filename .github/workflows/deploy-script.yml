@@ -19,6 +19,7 @@ jobs:
         run: pnpm --filter @codeqr/analytics-script build
 
       - name: Deploy to Cloudflare Pages
+        id: cloudflare-deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_PAGES_API_KEY }}
@@ -27,6 +28,7 @@ jobs:
           workingDirectory: packages/script
           packageManager: pnpm
 
+      # Dispatch deployment event to trigger Playwright tests
       - name: Dispatch deployment event
         uses: peter-evans/repository-dispatch@v3
         with:

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Your website description" />
+    <title>Client Conversion Tracking</title>
+  </head>
+  <body>
+    <script>
+      !(function (w, da) {
+        w[da] =
+          w[da] ||
+          function () {
+            (w[da].q = w[da].q || []).push(arguments);
+          };
+
+        ['trackClick', 'trackLead', 'trackSale'].forEach(function (m) {
+          w[da][m] = function () {
+            w[da](m, ...arguments);
+          };
+        });
+      })(window, 'CodeQRAnalytics');
+    </script>
+
+    <script>
+      const script = document.createElement('script');
+      script.defer = true;
+      script.src =
+        'https://cdn.codeqr.io/analytics/script.conversion-tracking.js';
+      script.setAttribute(
+        'data-publishable-key',
+        'codeqr_pk_xxxxxxxx', // get your publishable key from https://app.codeqr.io/settings/analytics
+      );
+      document.head.appendChild(script);
+    </script>
+
+    <header>
+      <h1>Client Conversion Tracking</h1>
+      <button
+        onclick="CodeQRAnalytics.trackLead({
+          eventName: 'Account created',
+          customerExternalId: '1234567890',
+          customerName: 'John Doe',
+          customerEmail: 'john.doe@example.com',
+        })"
+      >
+        Track Lead
+      </button>
+
+      <button
+        onclick="CodeQRAnalytics.trackSale({
+          eventName: 'Purchase completed',
+          customerExternalId: 'CXvG5QOLi8QKBA2jYmDh',
+          invoiceId: Math.random().toString(36).substring(2, 15),
+          amount: 5000, // defaults to usd cents, use `currency` prop to specify a different currency
+        })"
+      >
+        Track Sale
+      </button>
+    </header>
+  </body>
+</html>

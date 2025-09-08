@@ -12,6 +12,7 @@
   // Common script attributes
   const API_HOST =
     script.getAttribute('data-api-host') || 'https://api.codeqr.io';
+  const PUBLISHABLE_KEY = script.getAttribute('data-publishable-key');
 
   const COOKIE_OPTIONS = (() => {
     const defaultOptions = {
@@ -70,6 +71,44 @@
     QUERY_PARAM,
   );
 
+  // Initialize global CodeQRAnalytics object
+  window.CodeQRAnalytics = window.CodeQRAnalytics || {
+    partner: null,
+    discount: null,
+    outbound: null,
+  };
+
+  // Initialize codeqrAnalytics
+  if (window.codeqrAnalytics) {
+    const original = window.codeqrAnalytics;
+    const queue = original.q || [];
+
+    // Create a callable function
+    function codeqrAnalytics(method, ...args) {
+      if (method === 'ready') {
+        codeqrAnalytics.ready(...args);
+      } else if (method === 'trackClick') {
+        codeqrAnalytics.trackClick(...args);
+      } else {
+        console.warn('[codeqrAnalytics] Unknown method:', method);
+      }
+    }
+
+    // Attach properties and methods
+    codeqrAnalytics.q = queue;
+
+    codeqrAnalytics.ready = function (callback) {
+      callback();
+    };
+
+    codeqrAnalytics.trackClick = function (...args) {
+      trackClick(...args);
+    };
+
+    // Replace window.codeqrAnalytics with the callable + augmented function
+    window.codeqrAnalytics = codeqrAnalytics;
+  }
+
   // Cookie management
   const cookieManager = {
     get(key) {
@@ -89,18 +128,58 @@
     },
   };
 
+  // Queue management
+  const queueManager = {
+    queue: window.codeqrAnalytics?.q || [],
+
+    // Process specific method types (e.g., only 'ready')
+    flush(methodFilter) {
+      const remainingQueue = [];
+
+      while (this.queue.length) {
+        const [method, ...args] = this.queue.shift();
+
+        if (!methodFilter || methodFilter(method)) {
+          this.process({ method, args });
+        } else {
+          remainingQueue.push([method, ...args]);
+        }
+      }
+
+      this.queue = remainingQueue;
+    },
+
+    process({ method, args }) {
+      if (method === 'ready') {
+        const callback = args[0];
+        callback();
+      } else if (['trackClick'].includes(method)) {
+        trackClick(...args);
+      } else {
+        console.warn('[codeqrAnalytics] Unknown method:', method);
+      }
+    },
+  };
+
   let clientClickTracked = false;
+
   // Track click and set cookie
-  function trackClick(identifier, serverClickId) {
-    if (clientClickTracked) return;
+  function trackClick({ domain, key }) {
+    if (clientClickTracked) {
+      return;
+    }
+
     clientClickTracked = true;
+
+    const params = new URLSearchParams(location.search);
+    const serverClickId = params.get(CODEQR_ID_VAR);
 
     fetch(`${API_HOST}/track/click`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        domain: SHORT_DOMAIN,
-        key: identifier,
+        domain,
+        key,
         url: window.location.href,
         referrer: document.referrer,
       }),
@@ -110,7 +189,7 @@
         if (data) {
           if (serverClickId && serverClickId !== data.clickId) {
             console.warn(
-              `Client-tracked click ID ${data.clickId} does not match server-tracked click ID ${serverClickId}, skipping...`,
+              `[codeqrAnalytics] Client-tracked click ID ${data.clickId} does not match server-tracked click ID ${serverClickId}, skipping...`,
             );
             return;
           }
@@ -124,7 +203,9 @@
               partner: {
                 ...data.partner,
                 name: encodeURIComponent(data.partner.name),
-                image: encodeURIComponent(data.partner.image),
+                image: data.partner.image
+                  ? encodeURIComponent(data.partner.image)
+                  : null,
               },
             };
 
@@ -132,7 +213,14 @@
               CODEQR_PARTNER_COOKIE,
               JSON.stringify(encodedData),
             );
+
+            CodeQRAnalytics.partner = data.partner;
+            CodeQRAnalytics.discount = data.discount;
+
+            queueManager.flush((method) => method === 'ready');
           }
+
+          return data;
         }
       });
   }
@@ -157,7 +245,27 @@
 
     // CodeQR Partners tracking (via query param e.g. ?via=partner_id)
     if (QUERY_PARAM_VALUE && SHORT_DOMAIN && shouldSetCookie()) {
-      trackClick(QUERY_PARAM_VALUE, clickId);
+      trackClick({
+        domain: SHORT_DOMAIN,
+        key: QUERY_PARAM_VALUE,
+      });
+    }
+
+    // Process the queued methods
+    queueManager.flush((method) => method === 'trackClick');
+
+    // Initialize CodeQRAnalytics from cookie if it exists
+    const partnerCookie = cookieManager.get(CODEQR_PARTNER_COOKIE);
+
+    if (partnerCookie) {
+      try {
+        const partnerData = JSON.parse(partnerCookie);
+
+        CodeQRAnalytics.partner = partnerData.partner;
+        CodeQRAnalytics.discount = partnerData.discount;
+      } catch (e) {
+        console.error('[codeqrAnalytics] Failed to parse partner cookie:', e);
+      }
     }
   }
 
@@ -173,6 +281,8 @@
     p: QUERY_PARAM, // was QUERY_PARAM
     v: QUERY_PARAM_VALUE, // was QUERY_PARAM_VALUE
     n: DOMAINS_CONFIG, // was DOMAINS_CONFIG
+    k: PUBLISHABLE_KEY,
+    qm: queueManager,
   };
 
   // Initialize

@@ -2,11 +2,50 @@ import { name, version } from '../package.json';
 import type { AnalyticsProps } from './types';
 import { isBrowser } from './utils';
 
+// Definimos uma interface para a função de analytics para garantir a tipagem correta.
+interface AnalyticsFunction {
+  (...args: unknown[]): void;
+  q?: unknown[];
+  trackClick: (...args: unknown[]) => void;
+  trackLead: (...args: unknown[]) => void;
+  trackSale: (...args: unknown[]) => void;
+}
+
+// O tipo de janela agora inclui a função de analytics.
+type CodeQRAnalyticsWindow = Window & {
+  codeqrAnalytics?: AnalyticsFunction;
+};
+
 /**
  * Injects the CodeQR Web Analytics script into the page head.
  */
 function inject(props: AnalyticsProps): void {
   if (!isBrowser()) return;
+
+  const w = window as CodeQRAnalyticsWindow;
+  const da = 'codeqrAnalytics';
+
+  // Initialize analytics function
+  const initFn = function analyticsFunction(...args: unknown[]): void {
+    if (!initFn.q) {
+      initFn.q = [];
+    }
+    initFn.q.push(args);
+  } as AnalyticsFunction;
+
+  // Define methods for the analytics function
+  const methods: (keyof Pick<
+    AnalyticsFunction,
+    'trackClick' | 'trackLead' | 'trackSale'
+  >)[] = ['trackClick', 'trackLead', 'trackSale'];
+
+  methods.forEach((method) => {
+    initFn[method] = function methodFunction(...args: unknown[]): void {
+      initFn(method, ...args);
+    };
+  });
+
+  w[da] = initFn;
 
   // Determine script source based on enabled features
   const baseUrl = 'https://cdn.codeqr.io/analytics/script';
@@ -14,6 +53,7 @@ function inject(props: AnalyticsProps): void {
 
   if (props.domainsConfig?.site) features.push('site-visit');
   if (props.domainsConfig?.outbound) features.push('outbound-domains');
+  if (props.publishableKey) features.push('conversion-tracking');
 
   const src =
     props.scriptProps?.src ||
@@ -31,6 +71,10 @@ function inject(props: AnalyticsProps): void {
 
   if (props.apiHost) {
     script.setAttribute('data-api-host', props.apiHost);
+  }
+
+  if (props.publishableKey) {
+    script.setAttribute('data-publishable-key', props.publishableKey);
   }
 
   if (props.domainsConfig) {

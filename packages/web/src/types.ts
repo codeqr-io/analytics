@@ -8,6 +8,12 @@ export interface AnalyticsProps {
   apiHost?: string;
 
   /**
+   * The publishable key for authentication with the CodeQR API.
+   * Required for conversion tracking features.
+   */
+  publishableKey?: string;
+
+  /**
    * This is a JSON object that configures the domains that CodeQR will track.
    *
    * - `refer`: The CodeQR short domain for referral program client-side click tracking (previously `shortDomain`). @see: https://codeqr.link/clicks/refer
@@ -154,4 +160,45 @@ export interface AnalyticsProps {
 
 export interface ClickApiResponse {
   clickId: string;
+}
+
+export interface TrackClickInput {
+  domain: string;
+  key: string;
+}
+
+export interface TrackLeadInput {
+  clickId?: string; // falls back to cq_id cookie
+  eventName: string;
+  customerExternalId: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerAvatar?: string;
+  mode?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface TrackSaleInput {
+  eventName: string;
+  customerExternalId: string;
+  paymentProcessor?: string;
+  amount: number;
+  invoiceId?: string;
+  currency?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface Partner {
+  id: string;
+  name: string;
+  image: string | null;
+}
+
+export interface Discount {
+  id: string;
+  amount: number;
+  type: 'percentage' | 'flat';
+  maxDuration: number | null;
+  couponId: string | null;
+  couponTestId: string | null;
 }

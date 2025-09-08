@@ -76,4 +76,64 @@ Promise.all([
     },
     outfile: 'dist/analytics/script.site-visit.outbound-domains.js',
   }),
+
+  // Base script with conversion tracking
+  esbuild.build({
+    ...baseConfig,
+    stdin: {
+      contents: combineFiles([
+        'src/base.js',
+        'src/extensions/conversion-tracking.js',
+      ]),
+      resolveDir: __dirname,
+      sourcefile: 'combined.js',
+    },
+    outfile: 'dist/analytics/script.conversion.js',
+  }),
+
+  // Site visit with conversion tracking
+  esbuild.build({
+    ...baseConfig,
+    stdin: {
+      contents: combineFiles([
+        'src/base.js',
+        'src/extensions/site-visit.js',
+        'src/extensions/conversion-tracking.js',
+      ]),
+      resolveDir: __dirname,
+      sourcefile: 'combined.js',
+    },
+    outfile: 'dist/analytics/script.site-visit.conversion.js',
+  }),
+
+  // Outbound domains with conversion tracking
+  esbuild.build({
+    ...baseConfig,
+    stdin: {
+      contents: combineFiles([
+        'src/base.js',
+        'src/extensions/outbound-domains.js',
+        'src/extensions/conversion-tracking.js',
+      ]),
+      resolveDir: __dirname,
+      sourcefile: 'combined.js',
+    },
+    outfile: 'dist/analytics/script.outbound-domains.conversion.js',
+  }),
+
+  // Complete script with all features including conversion tracking
+  esbuild.build({
+    ...baseConfig,
+    stdin: {
+      contents: combineFiles([
+        'src/base.js',
+        'src/extensions/site-visit.js',
+        'src/extensions/outbound-domains.js',
+        'src/extensions/conversion-tracking.js',
+      ]),
+      resolveDir: __dirname,
+      sourcefile: 'combined.js',
+    },
+    outfile: 'dist/analytics/script.site-visit.outbound-domains.conversion.js',
+  }),
 ]).catch(() => process.exit(1));
