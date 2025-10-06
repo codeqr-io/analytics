@@ -174,17 +174,23 @@ export interface TrackLeadInput {
   customerName?: string;
   customerEmail?: string;
   customerAvatar?: string;
+  eventQuantity?: number;
   mode?: string;
   metadata?: Record<string, unknown>;
 }
 
 export interface TrackSaleInput {
+  clickId?: string; // falls back to cq_id cookie
   eventName: string;
   customerExternalId: string;
-  paymentProcessor?: string;
-  amount: number;
-  invoiceId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerAvatar?: string;
+  amount?: number;
   currency?: string;
+  paymentProcessor?: string;
+  invoiceId?: string;
+  leadEventName?: string;
   metadata?: Record<string, unknown>;
 }
 
