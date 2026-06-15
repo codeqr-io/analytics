@@ -17,7 +17,7 @@
     "build": "node build.js"
   },
   "devDependencies": {
-    "esbuild": "^0.19.0",
+    "esbuild": "^0.28.1",
     "terser": "^5.39.0"
   }
 }
