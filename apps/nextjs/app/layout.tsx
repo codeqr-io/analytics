@@ -24,16 +24,19 @@ export default function RootLayout({
         {children}
       </body>
       <CodeQRAnalytics
+        publishableKey="cq_test_pk"
         domainsConfig={{
           refer: 'getacme.link',
           site: 'getacme.link',
           outbound: 'example.com,other.com,sub.example.com',
         }}
+        autoConvert={{
+          forms: true,
+          formSelector: '.cq-autoform',
+          eventName: 'Lead',
+        }}
         scriptProps={{
-          src: CODEQR_ANALYTICS_SCRIPT_URL.replace(
-            'script.js',
-            'script.site-visit.outbound-domains.conversion.js',
-          ),
+          src: CODEQR_ANALYTICS_SCRIPT_URL,
         }}
       />
     </html>

@@ -1,9 +1,220 @@
+function initAutoFormCapture({ trackLead, storage, config }) {
+  const ANON_KEY = 'cq_anon_id';
+  const ANON_TTL_MS = 90 * 24 * 60 * 60 * 1000;
+  const recentlySubmitted = new WeakSet();
+
+  function isAllowedForm(form) {
+    if (form.closest('[data-codeqr-ignore]')) return false;
+    if (form.hasAttribute('data-codeqr-conversion')) return true;
+    if (config.formSelector) {
+      try {
+        return form.matches(config.formSelector);
+      } catch (e) {
+        return false;
+      }
+    }
+    return false;
+  }
+
+  function getAnonId() {
+    let id = storage && storage.get(ANON_KEY);
+    if (!id) {
+      id =
+        window.crypto && window.crypto.randomUUID
+          ? window.crypto.randomUUID()
+          : 'anon_' + Date.now() + '_' + Math.floor(Math.random() * 1e9);
+      if (storage) storage.set(ANON_KEY, id, ANON_TTL_MS);
+    }
+    return id;
+  }
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  function fieldHint(el) {
+    return (
+      (el.name || '') +
+      ' ' +
+      (el.id || '') +
+      ' ' +
+      (el.getAttribute('autocomplete') || '')
+    ).toLowerCase();
+  }
+
+  function detectKind(el) {
+    const type = (el.type || '').toLowerCase();
+    const ac = (el.getAttribute('autocomplete') || '').toLowerCase();
+    const hint = fieldHint(el);
+    if (type === 'email' || ac.indexOf('email') !== -1 || /email/.test(hint))
+      return 'email';
+    if (type === 'tel' || ac === 'tel' || /phone|\btel\b/.test(hint))
+      return 'phone';
+    if (ac === 'given-name') return 'given';
+    if (ac === 'family-name') return 'family';
+    if (ac === 'name' || (/name/.test(hint) && !/user.?name/.test(hint)))
+      return 'name';
+    return 'other';
+  }
+
+  const CC_KEYWORDS =
+    /(card.?number|cc.?num|credit.?card|expir|cvv|cvc|ccv|security.?code|amex|mastercard)/i;
+  const OTP_KEYWORDS =
+    /(\botp\b|one.?time.?(code|password|pin)|verification.?(code|token|pin)|passcode|\b2fa\b|\bmfa\b)/i;
+
+  function looksLikeCard(value) {
+    const digits = String(value || '').replace(/\D/g, '');
+    if (digits.length < 13 || digits.length > 19) return false;
+    let sum = 0;
+    let alt = false;
+    for (let i = digits.length - 1; i >= 0; i--) {
+      let n = parseInt(digits.charAt(i), 10);
+      if (alt) {
+        n *= 2;
+        if (n > 9) n -= 9;
+      }
+      sum += n;
+      alt = !alt;
+    }
+    return sum % 10 === 0;
+  }
+
+  function isSensitive(el) {
+    const type = (el.type || '').toLowerCase();
+    if (type === 'password' || type === 'hidden' || type === 'file')
+      return true;
+    const ac = (el.getAttribute('autocomplete') || '').toLowerCase();
+    if (ac === 'one-time-code' || ac.indexOf('cc-') === 0) return true;
+    if (el.hasAttribute('data-codeqr-ignore')) return true;
+    const hint =
+      (el.name || '') +
+      ' ' +
+      (el.id || '') +
+      ' ' +
+      (el.placeholder || '') +
+      ' ' +
+      (el.getAttribute('aria-label') || '');
+    if (CC_KEYWORDS.test(hint) || OTP_KEYWORDS.test(hint)) return true;
+    if (looksLikeCard(el.value)) return true;
+    return false;
+  }
+
+  function extract(form) {
+    const out = {
+      email: null,
+      name: null,
+      phone: null,
+      given: null,
+      family: null,
+      metadata: {},
+    };
+    const fields = form.querySelectorAll('input, select, textarea');
+    for (let i = 0; i < fields.length; i++) {
+      const el = fields[i];
+      if (isSensitive(el)) continue;
+      const value = el.value;
+      if (value == null || value === '') continue;
+      const kind = detectKind(el);
+      if (kind === 'email') {
+        if (EMAIL_RE.test(value)) out.email = value;
+        continue;
+      }
+      if (kind === 'phone') {
+        out.phone = value;
+        continue;
+      }
+      if (kind === 'given') {
+        out.given = value;
+        continue;
+      }
+      if (kind === 'family') {
+        out.family = value;
+        continue;
+      }
+      if (kind === 'name') {
+        out.name = value;
+        continue;
+      }
+      // kind === 'other'
+      const captureField =
+        config.captureAllFields || el.hasAttribute('data-codeqr-capture');
+      if (captureField) {
+        const key = el.name || el.id;
+        if (key) out.metadata[key] = value;
+      }
+    }
+    if (!out.name && (out.given || out.family)) {
+      out.name = [out.given, out.family].filter(Boolean).join(' ');
+    }
+    return out;
+  }
+
+  function capMetadata(obj) {
+    try {
+      if (JSON.stringify(obj).length <= 10000) return obj;
+    } catch (e) {
+      return undefined;
+    }
+    const trimmed = {};
+    const keys = Object.keys(obj);
+    try {
+      for (let i = 0; i < keys.length; i++) {
+        trimmed[keys[i]] = obj[keys[i]];
+        if (JSON.stringify(trimmed).length > 10000) {
+          delete trimmed[keys[i]];
+          break;
+        }
+      }
+    } catch (e) {
+      // partial trim is fine; return what we have so far
+    }
+    return trimmed;
+  }
+
+  function handleSubmit(e) {
+    const form = e.target;
+    if (!form || !(form instanceof HTMLFormElement)) return;
+    if (!isAllowedForm(form)) return;
+    if (recentlySubmitted.has(form)) return;
+    recentlySubmitted.add(form);
+    setTimeout(function () {
+      recentlySubmitted.delete(form);
+    }, 1000);
+
+    const eventName =
+      form.getAttribute('data-codeqr-event-name') || config.eventName || 'Lead';
+    const data = extract(form);
+    const externalId = data.email || data.phone || getAnonId();
+
+    const input = {
+      eventName,
+      customerExternalId: externalId,
+    };
+    if (data.email) input.customerEmail = data.email;
+    if (data.name) input.customerName = data.name;
+    const metadata = Object.assign({}, data.metadata);
+    if (data.phone) metadata.phone = data.phone;
+    if (Object.keys(metadata).length > 0) {
+      const capped = capMetadata(metadata);
+      if (capped && Object.keys(capped).length > 0) input.metadata = capped;
+    }
+
+    trackLead(input, { keepalive: true }).catch(function (err) {
+      console.error('[CodeQR Analytics] auto form capture failed', err);
+    });
+  }
+
+  // Delegated, capture-phase listener — covers dynamically added forms and runs
+  // before any page-level submit handler. Never calls preventDefault.
+  document.addEventListener('submit', handleSubmit, true);
+}
+
 const initConversionTracking = () => {
   const {
     a: API_HOST,
     k: PUBLISHABLE_KEY,
     c: cookieManager,
     i: CODEQR_ID_VAR,
+    s: storage,
+    ac: AUTO_CONVERT,
   } = window._CodeQRAnalytics || {};
 
   if (!API_HOST) {
@@ -27,9 +238,11 @@ const initConversionTracking = () => {
    * @param {string} [input.customerEmail] - Customer email
    * @param {string} [input.customerAvatar] - Customer avatar URL
    * @param {Object} [input.metadata] - Additional metadata
+   * @param {Object} [opts] - Options
+   * @param {boolean} [opts.keepalive] - Use fetch keepalive (for navigating submits)
    * @returns {Promise<Object>} - Response from the API
    */
-  const trackLead = async (input) => {
+  const trackLead = async (input, opts) => {
     const clickId = cookieManager?.get(CODEQR_ID_VAR);
 
     const requestBody = {
@@ -44,6 +257,7 @@ const initConversionTracking = () => {
         Authorization: `Bearer ${PUBLISHABLE_KEY}`,
       },
       body: JSON.stringify(requestBody),
+      ...(opts && opts.keepalive ? { keepalive: true } : {}),
     });
 
     const result = await response.json();
@@ -118,6 +332,11 @@ const initConversionTracking = () => {
 
     // Update the queue with remaining items
     queueManager.queue = remainingQueue;
+  }
+
+  // Auto form capture (opt-in, allowlist-gated).
+  if (AUTO_CONVERT && AUTO_CONVERT.forms) {
+    initAutoFormCapture({ trackLead, storage, config: AUTO_CONVERT });
   }
 };
 

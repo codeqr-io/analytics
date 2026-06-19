@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "pnpm --filter @codeqr/analytics... build && next build",
+    "build:script": "pnpm --filter @codeqr/analytics-script build && rm -rf public/analytics && mkdir -p public/analytics && cp -R ../../packages/script/dist/analytics/. public/analytics/",
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",

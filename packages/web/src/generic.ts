@@ -100,6 +100,10 @@ function inject(props: AnalyticsProps): void {
     script.setAttribute('data-query-param', props.queryParam);
   }
 
+  if (props.autoConvert && Object.keys(props.autoConvert).length > 0) {
+    script.setAttribute('data-auto-convert', JSON.stringify(props.autoConvert));
+  }
+
   if (props.scriptProps) {
     const { src: _, ...restProps } = props.scriptProps; // we already set the src above
     Object.assign(script, restProps);
