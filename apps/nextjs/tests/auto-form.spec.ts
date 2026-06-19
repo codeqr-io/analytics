@@ -152,6 +152,8 @@ test.describe('Auto form capture — security', () => {
     await expect.poll(() => requests.length).toBeGreaterThan(0);
 
     const serialized = JSON.stringify(requests[0]);
+    // Sanity: the form WAS captured (proves the assertions below are not vacuous).
+    expect(serialized).toContain('selector@example.com');
     expect(serialized).not.toContain('hunter2'); // password
     expect(serialized).not.toContain('should-not-leak'); // hidden
     expect(serialized).not.toContain('4242424242424242'); // cc-number

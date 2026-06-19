@@ -106,9 +106,9 @@ function initAutoFormCapture({ trackLead, storage, config }) {
     const fields = form.querySelectorAll('input, select, textarea');
     for (let i = 0; i < fields.length; i++) {
       const el = fields[i];
+      if (isSensitive(el)) continue;
       const value = el.value;
       if (value == null || value === '') continue;
-      if (isSensitive(el)) continue;
       const kind = detectKind(el);
       if (kind === 'email') {
         if (EMAIL_RE.test(value)) out.email = value;
