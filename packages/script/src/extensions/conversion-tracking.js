@@ -55,6 +55,46 @@ function initAutoFormCapture({ trackLead, storage, config }) {
     return 'other';
   }
 
+  const CC_KEYWORDS =
+    /(card.?number|cc.?num|credit.?card|expir|cvv|cvc|ccv|security.?code|amex|mastercard)/i;
+
+  function looksLikeCard(value) {
+    const digits = String(value || '').replace(/\D/g, '');
+    if (digits.length < 13 || digits.length > 19) return false;
+    let sum = 0;
+    let alt = false;
+    for (let i = digits.length - 1; i >= 0; i--) {
+      let n = parseInt(digits.charAt(i), 10);
+      if (alt) {
+        n *= 2;
+        if (n > 9) n -= 9;
+      }
+      sum += n;
+      alt = !alt;
+    }
+    return sum % 10 === 0;
+  }
+
+  function isSensitive(el) {
+    const type = (el.type || '').toLowerCase();
+    if (type === 'password' || type === 'hidden' || type === 'file')
+      return true;
+    const ac = (el.getAttribute('autocomplete') || '').toLowerCase();
+    if (ac === 'one-time-code' || ac.indexOf('cc-') === 0) return true;
+    if (el.hasAttribute('data-codeqr-ignore')) return true;
+    const hint =
+      (el.name || '') +
+      ' ' +
+      (el.id || '') +
+      ' ' +
+      (el.placeholder || '') +
+      ' ' +
+      (el.getAttribute('aria-label') || '');
+    if (CC_KEYWORDS.test(hint)) return true;
+    if (looksLikeCard(el.value)) return true;
+    return false;
+  }
+
   function extract(form) {
     const out = {
       email: null,
@@ -68,6 +108,7 @@ function initAutoFormCapture({ trackLead, storage, config }) {
       const el = fields[i];
       const value = el.value;
       if (value == null || value === '') continue;
+      if (isSensitive(el)) continue;
       const kind = detectKind(el);
       if (kind === 'email') {
         if (EMAIL_RE.test(value)) out.email = value;

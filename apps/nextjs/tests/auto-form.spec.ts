@@ -134,3 +134,27 @@ test.describe('Auto form capture — config', () => {
     expect(ac).toBeNull();
   });
 });
+
+test.describe('Auto form capture — security', () => {
+  test('never captures sensitive fields', async ({ page }) => {
+    const requests: any[] = [];
+    await page.route('**/track/lead/client', async (route) => {
+      requests.push(JSON.parse(route.request().postData() || '{}'));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: '{"click":{"id":"x"},"customer":{"id":"y"}}',
+      });
+    });
+
+    await page.goto('/auto-form-test');
+    await page.click('#allowed-selector button[type="submit"]');
+    await expect.poll(() => requests.length).toBeGreaterThan(0);
+
+    const serialized = JSON.stringify(requests[0]);
+    expect(serialized).not.toContain('hunter2'); // password
+    expect(serialized).not.toContain('should-not-leak'); // hidden
+    expect(serialized).not.toContain('4242424242424242'); // cc-number
+    expect(serialized).not.toContain('123456'); // otp
+  });
+});
