@@ -46,7 +46,7 @@ function initAutoFormCapture({ trackLead, storage, config }) {
     const hint = fieldHint(el);
     if (type === 'email' || ac.indexOf('email') !== -1 || /email/.test(hint))
       return 'email';
-    if (type === 'tel' || ac === 'tel' || /phone|tel/.test(hint))
+    if (type === 'tel' || ac === 'tel' || /phone|\btel\b/.test(hint))
       return 'phone';
     if (ac === 'given-name') return 'given';
     if (ac === 'family-name') return 'family';
