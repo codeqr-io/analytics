@@ -30,7 +30,7 @@ function initAutoFormCapture({ trackLead, storage, config }) {
 
   function handleSubmit(e) {
     const form = e.target;
-    if (!form || form.tagName !== 'FORM') return;
+    if (!form || !(form instanceof HTMLFormElement)) return;
     if (!isAllowedForm(form)) return;
     if (recentlySubmitted.has(form)) return;
     recentlySubmitted.add(form);
@@ -45,7 +45,9 @@ function initAutoFormCapture({ trackLead, storage, config }) {
     trackLead(
       { eventName, customerExternalId: externalId },
       { keepalive: true },
-    );
+    ).catch(function (err) {
+      console.error('[CodeQR Analytics] auto form capture failed', err);
+    });
   }
 
   // Delegated, capture-phase listener — covers dynamically added forms and runs
