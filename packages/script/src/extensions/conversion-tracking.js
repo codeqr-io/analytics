@@ -102,6 +102,7 @@ function initAutoFormCapture({ trackLead, storage, config }) {
       phone: null,
       given: null,
       family: null,
+      metadata: {},
     };
     const fields = form.querySelectorAll('input, select, textarea');
     for (let i = 0; i < fields.length; i++) {
@@ -130,11 +131,36 @@ function initAutoFormCapture({ trackLead, storage, config }) {
         out.name = value;
         continue;
       }
+      // kind === 'other'
+      const captureField =
+        config.captureAllFields || el.hasAttribute('data-codeqr-capture');
+      if (captureField) {
+        const key = el.name || el.id;
+        if (key) out.metadata[key] = value;
+      }
     }
     if (!out.name && (out.given || out.family)) {
       out.name = [out.given, out.family].filter(Boolean).join(' ');
     }
     return out;
+  }
+
+  function capMetadata(obj) {
+    try {
+      if (JSON.stringify(obj).length <= 10000) return obj;
+    } catch (e) {
+      return undefined;
+    }
+    const trimmed = {};
+    const keys = Object.keys(obj);
+    for (let i = 0; i < keys.length; i++) {
+      trimmed[keys[i]] = obj[keys[i]];
+      if (JSON.stringify(trimmed).length > 10000) {
+        delete trimmed[keys[i]];
+        break;
+      }
+    }
+    return trimmed;
   }
 
   function handleSubmit(e) {
@@ -158,7 +184,12 @@ function initAutoFormCapture({ trackLead, storage, config }) {
     };
     if (data.email) input.customerEmail = data.email;
     if (data.name) input.customerName = data.name;
-    if (data.phone) input.metadata = { phone: data.phone };
+    const metadata = Object.assign({}, data.metadata);
+    if (data.phone) metadata.phone = data.phone;
+    if (Object.keys(metadata).length > 0) {
+      const capped = capMetadata(metadata);
+      if (capped && Object.keys(capped).length > 0) input.metadata = capped;
+    }
 
     trackLead(input, { keepalive: true }).catch(function (err) {
       console.error('[CodeQR Analytics] auto form capture failed', err);

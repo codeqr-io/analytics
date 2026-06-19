@@ -97,6 +97,29 @@ test.describe('Auto form capture — mapping', () => {
     expect(body.customerExternalId.length).toBeGreaterThan(0);
     expect(body.customerName).toBe('Anon User');
   });
+
+  test('captures opt-in extra fields into metadata, not default ones', async ({
+    page,
+  }) => {
+    const requests: any[] = [];
+    await page.route('**/track/lead/client', async (route) => {
+      requests.push(JSON.parse(route.request().postData() || '{}'));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: '{"click":{"id":"x"},"customer":{"id":"y"}}',
+      });
+    });
+
+    await page.goto('/auto-form-test');
+    await page.click('#allowed-selector button[type="submit"]');
+    await expect.poll(() => requests.length).toBeGreaterThan(0);
+
+    const md = requests[0].metadata || {};
+    expect(md.role).toBe('CTO'); // has data-codeqr-capture
+    expect(md.company).toBeUndefined(); // plain extra field, captureAllFields is off
+    expect(md.phone).toBe('+15550001111'); // identity-adjacent, always kept
+  });
 });
 
 test.describe('Auto form capture — config', () => {
