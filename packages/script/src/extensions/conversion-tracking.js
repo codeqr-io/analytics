@@ -1,9 +1,66 @@
+function initAutoFormCapture({ trackLead, storage, config }) {
+  const ANON_KEY = 'cq_anon_id';
+  const ANON_TTL_MS = 90 * 24 * 60 * 60 * 1000;
+  const recentlySubmitted = new WeakSet();
+
+  function isAllowedForm(form) {
+    if (form.closest('[data-codeqr-ignore]')) return false;
+    if (form.hasAttribute('data-codeqr-conversion')) return true;
+    if (config.formSelector) {
+      try {
+        return form.matches(config.formSelector);
+      } catch (e) {
+        return false;
+      }
+    }
+    return false;
+  }
+
+  function getAnonId() {
+    let id = storage && storage.get(ANON_KEY);
+    if (!id) {
+      id =
+        window.crypto && window.crypto.randomUUID
+          ? window.crypto.randomUUID()
+          : 'anon_' + Date.now() + '_' + Math.floor(Math.random() * 1e9);
+      if (storage) storage.set(ANON_KEY, id, ANON_TTL_MS);
+    }
+    return id;
+  }
+
+  function handleSubmit(e) {
+    const form = e.target;
+    if (!form || form.tagName !== 'FORM') return;
+    if (!isAllowedForm(form)) return;
+    if (recentlySubmitted.has(form)) return;
+    recentlySubmitted.add(form);
+    setTimeout(function () {
+      recentlySubmitted.delete(form);
+    }, 1000);
+
+    const eventName =
+      form.getAttribute('data-codeqr-event-name') || config.eventName || 'Lead';
+    const externalId = getAnonId();
+
+    trackLead(
+      { eventName, customerExternalId: externalId },
+      { keepalive: true },
+    );
+  }
+
+  // Delegated, capture-phase listener — covers dynamically added forms and runs
+  // before any page-level submit handler. Never calls preventDefault.
+  document.addEventListener('submit', handleSubmit, true);
+}
+
 const initConversionTracking = () => {
   const {
     a: API_HOST,
     k: PUBLISHABLE_KEY,
     c: cookieManager,
     i: CODEQR_ID_VAR,
+    s: storage,
+    ac: AUTO_CONVERT,
   } = window._CodeQRAnalytics || {};
 
   if (!API_HOST) {
@@ -27,9 +84,11 @@ const initConversionTracking = () => {
    * @param {string} [input.customerEmail] - Customer email
    * @param {string} [input.customerAvatar] - Customer avatar URL
    * @param {Object} [input.metadata] - Additional metadata
+   * @param {Object} [opts] - Options
+   * @param {boolean} [opts.keepalive] - Use fetch keepalive (for navigating submits)
    * @returns {Promise<Object>} - Response from the API
    */
-  const trackLead = async (input) => {
+  const trackLead = async (input, opts) => {
     const clickId = cookieManager?.get(CODEQR_ID_VAR);
 
     const requestBody = {
@@ -44,6 +103,7 @@ const initConversionTracking = () => {
         Authorization: `Bearer ${PUBLISHABLE_KEY}`,
       },
       body: JSON.stringify(requestBody),
+      ...(opts && opts.keepalive ? { keepalive: true } : {}),
     });
 
     const result = await response.json();
@@ -118,6 +178,11 @@ const initConversionTracking = () => {
 
     // Update the queue with remaining items
     queueManager.queue = remainingQueue;
+  }
+
+  // Auto form capture (opt-in, allowlist-gated).
+  if (AUTO_CONVERT && AUTO_CONVERT.forms) {
+    initAutoFormCapture({ trackLead, storage, config: AUTO_CONVERT });
   }
 };
 
