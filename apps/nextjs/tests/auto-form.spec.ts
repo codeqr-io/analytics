@@ -26,4 +26,19 @@ test.describe('Auto form capture — config', () => {
       eventName: 'Signup',
     });
   });
+
+  test('falls back to null for malformed data-auto-convert', async ({
+    page,
+  }) => {
+    await page.setContent(`
+      <script src="${CODEQR_ANALYTICS_SCRIPT_URL}" defer
+        data-publishable-key="cq_test_pk"
+        data-auto-convert='{bad json'
+      ></script>
+    `);
+
+    await page.waitForFunction(() => window._CodeQRAnalytics !== undefined);
+    const ac = await page.evaluate(() => window._CodeQRAnalytics.ac);
+    expect(ac).toBeNull();
+  });
 });
