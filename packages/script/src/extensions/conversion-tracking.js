@@ -153,12 +153,16 @@ function initAutoFormCapture({ trackLead, storage, config }) {
     }
     const trimmed = {};
     const keys = Object.keys(obj);
-    for (let i = 0; i < keys.length; i++) {
-      trimmed[keys[i]] = obj[keys[i]];
-      if (JSON.stringify(trimmed).length > 10000) {
-        delete trimmed[keys[i]];
-        break;
+    try {
+      for (let i = 0; i < keys.length; i++) {
+        trimmed[keys[i]] = obj[keys[i]];
+        if (JSON.stringify(trimmed).length > 10000) {
+          delete trimmed[keys[i]];
+          break;
+        }
       }
+    } catch (e) {
+      // partial trim is fine; return what we have so far
     }
     return trimmed;
   }
