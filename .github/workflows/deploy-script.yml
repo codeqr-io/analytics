@@ -28,8 +28,12 @@ jobs:
           workingDirectory: packages/script
           packageManager: pnpm
 
-      # Dispatch deployment event to trigger Playwright tests
+      # Dispatch deployment event to trigger Playwright tests.
+      # Non-fatal: the Cloudflare deploy above is the deliverable; this dispatch
+      # targets an external repo and can fail on token scope without meaning the
+      # deploy itself failed, so it must not mark the whole run as failed.
       - name: Dispatch deployment event
+        continue-on-error: true
         uses: peter-evans/repository-dispatch@v3
         with:
           event-type: analytics-script-deployed
