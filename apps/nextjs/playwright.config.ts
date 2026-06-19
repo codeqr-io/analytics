@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
-import 'dotenv/config';
 import dotenv from 'dotenv';
-dotenv.config({ path: '.env.local', override: true });
+dotenv.config(); // loads .env
+dotenv.config({ path: '.env.local', override: true }); // loads .env.local, wins on collision
 
 export default defineConfig({
   testDir: './tests',
