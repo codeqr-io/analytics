@@ -89,3 +89,61 @@ The query parameter to listen to for client-side click-tracking (e.g. `?via=john
 ### `scriptProps`
 
 Custom properties to pass to the script tag. Refer to [MDN](https://developer.mozilla.org/en-US/docs/Web/API/HTMLScriptElement) for all available options.
+
+### `autoConvert`
+
+Opt-in automatic form-submit capture. When enabled, the script listens for form submissions and fires a lead conversion event without any custom JavaScript. Requires a `publishableKey` to be set.
+
+```tsx
+<CodeQRAnalytics
+  publishableKey="pk_live_..."
+  autoConvert={{ forms: true }}
+/>
+```
+
+#### Opting in per-form
+
+By default, automatic capture is **off** for every form. To enable it, either:
+
+- Add a `data-codeqr-conversion` attribute to the specific `<form>` element you want to capture, **or**
+- Pass a CSS selector via `autoConvert.formSelector` (e.g. `formSelector: "form.contact-form"`) to allowlist matching forms globally.
+
+Forms that match neither criterion are ignored.
+
+#### Opting out per-form
+
+To exclude a specific form even when it would otherwise be captured (e.g. because it matches `autoConvert.formSelector`), add `data-codeqr-ignore` to the `<form>` element:
+
+```html
+<form data-codeqr-ignore>...</form>
+```
+
+#### Default fields captured
+
+By default, only identity fields are captured: **email**, **name** (first/last/full), and **phone**. The email address is used as the `externalId` for deduplication; when no email or phone is present, an anonymous identifier is generated.
+
+#### Capturing additional metadata
+
+To include extra form fields as conversion metadata:
+
+- Set `autoConvert.captureAllFields: true` to capture all non-sensitive fields from every matched form, **or**
+- Add `data-codeqr-capture` to individual `<input>` / `<select>` / `<textarea>` elements to opt those fields in:
+
+```html
+<form data-codeqr-conversion>
+  <input name="email" type="email" />
+  <input name="company" type="text" data-codeqr-capture />
+</form>
+```
+
+#### Always-excluded fields
+
+The following are **never** captured regardless of any configuration or attribute:
+
+- `type="password"`, `type="hidden"`, `type="file"`
+- Credit-card patterns (fields whose name contains `card`, `cvv`, `cvc`, `ccv`, or `expir`)
+- OTP/verification-code patterns (fields whose name contains `otp`, `token`, or `verification`)
+
+#### Consent
+
+Load the analytics snippet **after** the user has given consent (e.g. inside your cookie-consent callback). Automatic form capture only activates once the script is present on the page — deferring the script load is the recommended way to honour consent requirements.
