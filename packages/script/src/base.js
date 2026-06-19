@@ -39,6 +39,51 @@
     return { ...defaultOptions, ...parsedOpts };
   })();
 
+  // Attribution window for the localStorage mirror (mirrors the cookie window).
+  const STORAGE_TTL_MS = (() => {
+    const opts = script.getAttribute('data-cookie-options');
+    if (opts) {
+      try {
+        const parsed = JSON.parse(opts);
+        if (parsed.expiresInDays)
+          return parsed.expiresInDays * 24 * 60 * 60 * 1000;
+        if (parsed.maxAge) return parsed.maxAge * 1000;
+      } catch (e) {
+        // fall through to default
+      }
+    }
+    return COOKIE_EXPIRES;
+  })();
+
+  // Guarded localStorage wrapper — never throws (private mode, disabled storage, quota).
+  const storage = {
+    get(key) {
+      try {
+        const raw = window.localStorage.getItem(key);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed.expires !== 'number') return null;
+        if (parsed.expires <= Date.now()) {
+          window.localStorage.removeItem(key);
+          return null;
+        }
+        return parsed.value;
+      } catch (e) {
+        return null;
+      }
+    },
+    set(key, value, ttlMs) {
+      try {
+        window.localStorage.setItem(
+          key,
+          JSON.stringify({ value, expires: Date.now() + ttlMs }),
+        );
+      } catch (e) {
+        // ignore
+      }
+    },
+  };
+
   const DOMAINS_CONFIG = (() => {
     // here, we fetch the old data-short-domain in case it's needed
     const oldReferDomain = script.getAttribute('data-short-domain');
@@ -125,6 +170,10 @@
         .join('; ');
 
       document.cookie = `${key}=${value}; ${cookieString}`;
+
+      if (key === CODEQR_ID_VAR) {
+        storage.set(CODEQR_ID_VAR, value, STORAGE_TTL_MS);
+      }
     },
   };
 
@@ -283,6 +332,7 @@
     n: DOMAINS_CONFIG, // was DOMAINS_CONFIG
     k: PUBLISHABLE_KEY,
     qm: queueManager,
+    s: storage, // guarded localStorage wrapper
   };
 
   // Initialize
