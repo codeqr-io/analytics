@@ -68,7 +68,10 @@ test.describe('Attribution window (localStorage mirror)', () => {
     await page.context().clearCookies();
 
     await page.goto('/');
-    await page.waitForTimeout(1500);
+    // Wait for the script to have run (init executed) before asserting the
+    // negative — avoids a false green where the deferred script simply hasn't
+    // run yet.
+    await page.waitForFunction(() => window._CodeQRAnalytics !== undefined);
     const cookies = await page.context().cookies();
     expect(cookies.find((c) => c.name === 'cq_id')).toBeUndefined();
   });
