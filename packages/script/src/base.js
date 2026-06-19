@@ -276,6 +276,15 @@
 
   // Initialize tracking
   function init() {
+    // Restore cq_id from the localStorage mirror if the cookie was dropped
+    // (e.g. Safari/ITP capping client-side cookies). Additive and guarded.
+    if (!cookieManager.get(CODEQR_ID_VAR)) {
+      const mirrored = storage.get(CODEQR_ID_VAR);
+      if (mirrored) {
+        cookieManager.set(CODEQR_ID_VAR, mirrored);
+      }
+    }
+
     const params = new URLSearchParams(location.search);
 
     const shouldSetCookie = () => {
