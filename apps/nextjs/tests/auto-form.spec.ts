@@ -63,6 +63,42 @@ test.describe('Auto form capture — gating', () => {
   });
 });
 
+test.describe('Auto form capture — mapping', () => {
+  async function capture(page: any, selector: string) {
+    const requests: any[] = [];
+    await page.route('**/track/lead/client', async (route: any) => {
+      requests.push(JSON.parse(route.request().postData() || '{}'));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: '{"click":{"id":"x"},"customer":{"id":"y"}}',
+      });
+    });
+    await page.goto('/auto-form-test');
+    await page.click(`${selector} button[type="submit"]`);
+    await expect.poll(() => requests.length).toBeGreaterThan(0);
+    return requests[0];
+  }
+
+  test('maps email/name and uses email as externalId', async ({ page }) => {
+    const body = await capture(page, '#allowed-selector');
+    expect(body.customerEmail).toBe('selector@example.com');
+    expect(body.customerExternalId).toBe('selector@example.com');
+    expect(body.customerName).toBe('Selector User');
+    expect(body.metadata?.phone).toBe('+15550001111');
+  });
+
+  test('falls back to an anonymous externalId when there is no email/phone', async ({
+    page,
+  }) => {
+    const body = await capture(page, '#no-email');
+    expect(body.customerEmail).toBeUndefined();
+    expect(typeof body.customerExternalId).toBe('string');
+    expect(body.customerExternalId.length).toBeGreaterThan(0);
+    expect(body.customerName).toBe('Anon User');
+  });
+});
+
 test.describe('Auto form capture — config', () => {
   test('parses data-auto-convert into _CodeQRAnalytics.ac', async ({
     page,

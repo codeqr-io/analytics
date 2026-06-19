@@ -28,6 +28,74 @@ function initAutoFormCapture({ trackLead, storage, config }) {
     return id;
   }
 
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  function fieldHint(el) {
+    return (
+      (el.name || '') +
+      ' ' +
+      (el.id || '') +
+      ' ' +
+      (el.getAttribute('autocomplete') || '')
+    ).toLowerCase();
+  }
+
+  function detectKind(el) {
+    const type = (el.type || '').toLowerCase();
+    const ac = (el.getAttribute('autocomplete') || '').toLowerCase();
+    const hint = fieldHint(el);
+    if (type === 'email' || ac.indexOf('email') !== -1 || /email/.test(hint))
+      return 'email';
+    if (type === 'tel' || ac === 'tel' || /phone|tel/.test(hint))
+      return 'phone';
+    if (ac === 'given-name') return 'given';
+    if (ac === 'family-name') return 'family';
+    if (ac === 'name' || (/name/.test(hint) && !/user.?name/.test(hint)))
+      return 'name';
+    return 'other';
+  }
+
+  function extract(form) {
+    const out = {
+      email: null,
+      name: null,
+      phone: null,
+      given: null,
+      family: null,
+    };
+    const fields = form.querySelectorAll('input, select, textarea');
+    for (let i = 0; i < fields.length; i++) {
+      const el = fields[i];
+      const value = el.value;
+      if (value == null || value === '') continue;
+      const kind = detectKind(el);
+      if (kind === 'email') {
+        if (EMAIL_RE.test(value)) out.email = value;
+        continue;
+      }
+      if (kind === 'phone') {
+        out.phone = value;
+        continue;
+      }
+      if (kind === 'given') {
+        out.given = value;
+        continue;
+      }
+      if (kind === 'family') {
+        out.family = value;
+        continue;
+      }
+      if (kind === 'name') {
+        out.name = value;
+        continue;
+      }
+    }
+    if (!out.name && (out.given || out.family)) {
+      out.name = [out.given, out.family].filter(Boolean).join(' ');
+    }
+    return out;
+  }
+
   function handleSubmit(e) {
     const form = e.target;
     if (!form || !(form instanceof HTMLFormElement)) return;
@@ -40,12 +108,18 @@ function initAutoFormCapture({ trackLead, storage, config }) {
 
     const eventName =
       form.getAttribute('data-codeqr-event-name') || config.eventName || 'Lead';
-    const externalId = getAnonId();
+    const data = extract(form);
+    const externalId = data.email || data.phone || getAnonId();
 
-    trackLead(
-      { eventName, customerExternalId: externalId },
-      { keepalive: true },
-    ).catch(function (err) {
+    const input = {
+      eventName,
+      customerExternalId: externalId,
+    };
+    if (data.email) input.customerEmail = data.email;
+    if (data.name) input.customerName = data.name;
+    if (data.phone) input.metadata = { phone: data.phone };
+
+    trackLead(input, { keepalive: true }).catch(function (err) {
       console.error('[CodeQR Analytics] auto form capture failed', err);
     });
   }
