@@ -181,6 +181,7 @@ test.describe('Auto form capture — security', () => {
     expect(serialized).not.toContain('should-not-leak'); // hidden
     expect(serialized).not.toContain('4242424242424242'); // cc-number
     expect(serialized).not.toContain('123456'); // otp
+    expect(serialized).not.toContain('999888'); // OTP/verification excluded by name even with data-codeqr-capture
   });
 });
 

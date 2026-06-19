@@ -57,6 +57,8 @@ function initAutoFormCapture({ trackLead, storage, config }) {
 
   const CC_KEYWORDS =
     /(card.?number|cc.?num|credit.?card|expir|cvv|cvc|ccv|security.?code|amex|mastercard)/i;
+  const OTP_KEYWORDS =
+    /(\botp\b|one.?time.?(code|password|pin)|verification.?(code|token|pin)|passcode|\b2fa\b|\bmfa\b)/i;
 
   function looksLikeCard(value) {
     const digits = String(value || '').replace(/\D/g, '');
@@ -90,7 +92,7 @@ function initAutoFormCapture({ trackLead, storage, config }) {
       (el.placeholder || '') +
       ' ' +
       (el.getAttribute('aria-label') || '');
-    if (CC_KEYWORDS.test(hint)) return true;
+    if (CC_KEYWORDS.test(hint) || OTP_KEYWORDS.test(hint)) return true;
     if (looksLikeCard(el.value)) return true;
     return false;
   }

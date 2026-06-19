@@ -140,9 +140,12 @@ To include extra form fields as conversion metadata:
 
 The following are **never** captured regardless of any configuration or attribute:
 
-- `type="password"`, `type="hidden"`, `type="file"`
-- Credit-card patterns (fields whose name contains `card`, `cvv`, `cvc`, `ccv`, or `expir`)
-- OTP/verification-code patterns (fields whose name contains `otp`, `token`, or `verification`)
+- Inputs of `type="password"`, `type="hidden"`, or `type="file"`
+- Fields with `autocomplete="one-time-code"` or an `autocomplete` value starting with `cc-`
+- Fields whose name/id/placeholder/label matches credit-card patterns: card number, expiry, cvv/cvc/ccv, security code, amex, mastercard
+- Fields whose name/id/placeholder/label matches one-time-passcode patterns: `otp`, one-time code/password/pin, verification code/token/pin, passcode, `2fa`, `mfa`
+- Any value that passes a Luhn credit-card checksum
+- Any field, or a field inside an element, marked `data-codeqr-ignore`
 
 #### Consent
 

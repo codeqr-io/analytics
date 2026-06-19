@@ -40,6 +40,11 @@ export default function AutoFormTestPage() {
           defaultValue="4242424242424242"
         />
         <input name="otp" autoComplete="one-time-code" defaultValue="123456" />
+        <input
+          name="verification_code"
+          data-codeqr-capture
+          defaultValue="999888"
+        />
         <button type="submit">Submit selector</button>
       </form>
 
