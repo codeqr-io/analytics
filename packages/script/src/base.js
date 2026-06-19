@@ -84,6 +84,16 @@
     },
   };
 
+  const AUTO_CONVERT = (() => {
+    const raw = script.getAttribute('data-auto-convert');
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+  })();
+
   const DOMAINS_CONFIG = (() => {
     // here, we fetch the old data-short-domain in case it's needed
     const oldReferDomain = script.getAttribute('data-short-domain');
@@ -342,6 +352,7 @@
     k: PUBLISHABLE_KEY,
     qm: queueManager,
     s: storage, // guarded localStorage wrapper
+    ac: AUTO_CONVERT, // auto-convert config (or null)
   };
 
   // Initialize

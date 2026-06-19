@@ -149,6 +149,21 @@ export interface AnalyticsProps {
   queryParam?: string;
 
   /**
+   * Automatic conversion capture from existing page forms.
+   * Disabled by default. Requires `publishableKey`.
+   */
+  autoConvert?: {
+    /** Master switch for automatic form capture. @default false */
+    forms?: boolean;
+    /** CSS selector allowlist for forms to capture (alternative to the `data-codeqr-conversion` attribute). */
+    formSelector?: string;
+    /** Capture every non-sensitive field into metadata. @default false (identity fields only). */
+    captureAllFields?: boolean;
+    /** Default lead event name when a form does not set `data-codeqr-event-name`. @default 'Lead' */
+    eventName?: string;
+  };
+
+  /**
    * Custom properties to pass to the script.
    * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLScriptElement
    */
