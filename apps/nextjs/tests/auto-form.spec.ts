@@ -183,3 +183,26 @@ test.describe('Auto form capture — security', () => {
     expect(serialized).not.toContain('123456'); // otp
   });
 });
+
+test.describe('Auto form capture — dedup', () => {
+  test('fires once for two rapid submits of the same form', async ({
+    page,
+  }) => {
+    const requests: any[] = [];
+    await page.route('**/track/lead/client', async (route) => {
+      requests.push(JSON.parse(route.request().postData() || '{}'));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: '{"click":{"id":"x"},"customer":{"id":"y"}}',
+      });
+    });
+
+    await page.goto('/auto-form-test');
+    await page.click('#allowed-attr button[type="submit"]');
+    await page.click('#allowed-attr button[type="submit"]');
+    await page.waitForTimeout(800);
+
+    expect(requests.length).toBe(1);
+  });
+});
