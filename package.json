@@ -19,5 +19,10 @@
     "prettier": "3.2.4",
     "typescript": "^5.1.6"
   },
-  "packageManager": "pnpm@8.6.5"
+  "packageManager": "pnpm@8.6.5",
+  "pnpm": {
+    "overrides": {
+      "cross-spawn": "^7.0.6"
+    }
+  }
 }
