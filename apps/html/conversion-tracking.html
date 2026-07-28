@@ -38,23 +38,27 @@
     <header>
       <h1>Client Conversion Tracking</h1>
       <button
-        onclick="CodeQRAnalytics.trackLead({
-          eventName: 'Account created',
-          customerExternalId: '1234567890',
-          customerName: 'John Doe',
-          customerEmail: 'john.doe@example.com',
-        })"
+        onclick="
+          CodeQRAnalytics.trackLead({
+            eventName: 'Account created',
+            customerExternalId: '1234567890',
+            customerName: 'John Doe',
+            customerEmail: 'john.doe@example.com',
+          })
+        "
       >
         Track Lead
       </button>
 
       <button
-        onclick="CodeQRAnalytics.trackSale({
-          eventName: 'Purchase completed',
-          customerExternalId: 'CXvG5QOLi8QKBA2jYmDh',
-          invoiceId: Math.random().toString(36).substring(2, 15),
-          amount: 5000, // defaults to usd cents, use `currency` prop to specify a different currency
-        })"
+        onclick="
+          CodeQRAnalytics.trackSale({
+            eventName: 'Purchase completed',
+            customerExternalId: 'CXvG5QOLi8QKBA2jYmDh',
+            invoiceId: Math.random().toString(36).substring(2, 15),
+            amount: 5000, // defaults to usd cents, use `currency` prop to specify a different currency
+          })
+        "
       >
         Track Sale
       </button>

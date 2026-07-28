@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "module": "esnext",
+    "module": "esnext"
   },
-  "include": ["src", "../script/src/index.js"],
+  "include": ["src", "../script/src/index.js"]
 }
