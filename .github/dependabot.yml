@@ -24,12 +24,19 @@ updates:
   # The example apps. All three manifests are `private: true`; they are never
   # published and never deployed.
   #
-  # KNOWN NOT TO WORK YET: on the first run this group did not take -- next,
-  # @playwright/test and postcss each opened their own PR despite matching
-  # `/apps/*` and nothing else. The github-actions group below did work, so the
-  # syntax is not the problem. Unexplained; the Dependabot run log under
-  # Insights > Dependency graph is where the answer is. The low cap below limits
-  # the damage until then.
+  # The grouping WORKS -- confirmed on the second run, which opened a single
+  # `example-apps` PR across all three directories. The first run's split into
+  # separate PRs was a first-run artifact, not a syntax problem.
+  #
+  # `update-types` is here for the same reason it is on github-actions below.
+  # Ungrouped by SemVer level, the group's first real PR batched next 15 -> 16,
+  # tailwindcss 3 -> 4, typescript 5 -> 7, eslint 8 -> 10 and cookie 0.6 -> 2.0
+  # into one change. Tailwind 4 alone is a config and CSS-import rewrite, so the
+  # batch was unmergeable as a unit and told you nothing about which piece was
+  # the problem.
+  #
+  # Minor and patch batch fine and keep the alert surface down. Majors on these
+  # apps are a rewrite, not a bump, and should be opened deliberately.
   - package-ecosystem: npm
     directories:
       - '/apps/*'
@@ -41,6 +48,9 @@ updates:
         applies-to: version-updates
         patterns:
           - '*'
+        update-types:
+          - minor
+          - patch
 
   # Workflow actions are pinned by commit SHA. A pinned SHA never picks up an
   # upstream fix on its own, so without this the pins rot.
