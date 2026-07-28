@@ -50,10 +50,15 @@ jobs:
       # implemented in the npm CLI and pnpm has neither -- `pnpm publish
       # --provenance` is accepted and silently does nothing.
       #
-      # npm >= 11.5.1 is the floor for Trusted Publishing, and npm documents Node
-      # 22.14+ alongside it -- well above the 18.16.1 in .nvmrc. The tarball is
-      # already built by this point, so the Node version here only affects the
-      # upload, not what ships.
+      # npm >= 11.5.1 is the floor for Trusted Publishing, and npm documents
+      # Node 22.14+ alongside it. The tarball is already built by this point,
+      # so the Node version here only affects the upload, not what ships.
+      #
+      # This step was added when .nvmrc pinned 18.16.1 and the composite action
+      # above therefore installed a Node too old to publish. .nvmrc is 22 now,
+      # so the two are the same version and this is redundant -- kept because
+      # release.yml has never had a real run, and the first one should change
+      # one thing at a time. Worth removing after a release proves the path.
       - name: Set up Node for publishing
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
