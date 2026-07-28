@@ -63,28 +63,27 @@ jobs:
       - name: Upgrade npm CLI
         run: npm install -g npm@11
 
-      # NODE_AUTH_TOKEN is still here on purpose, as a fallback rather than as
-      # the intended path. npm detects OIDC environments and uses them "before
-      # falling back to traditional tokens", so with a Trusted Publisher
-      # registered for this package the publish goes over OIDC and the token is
-      # never touched. If that registration is wrong, the token keeps the release
-      # from failing instead of turning a misconfiguration into an outage.
+      # No NODE_AUTH_TOKEN, and no fallback to one.
       #
-      # It comes out once a release confirms OIDC was actually used -- the tell
-      # is `_npmUser: GitHub Actions` on the new version. The stronger follow-up
-      # is npmjs.com's "Require two-factor authentication and disallow tokens" on
-      # the package, which shuts the fallback door for good; deleting the secret
-      # alone only removes this workflow's copy of the key.
+      # Auth is OIDC: a Trusted Publisher for @codeqr/analytics is registered
+      # against this repo and this workflow filename, and npm exchanges the
+      # id-token granted above for a short-lived credential. This matches the
+      # workflow npm documents for trusted publishing -- setup-node with a
+      # registry-url, and no token env var anywhere.
+      #
+      # The NPM_TOKEN this job used to carry was revoked on npmjs.com. Leaving
+      # the reference in would have been a fallback in name only, which is worse
+      # than none: it reads like a safety net while being a dead credential.
+      #
+      # So if the Trusted Publisher registration is wrong, this step fails with
+      # ENEEDAUTH and the release publishes nothing. That is recoverable -- fix
+      # the registration and re-run the workflow run for the same release.
       - name: publish (beta)
         if: github.event.release.prerelease == true
         working-directory: packages/web
         run: npm publish "$TARBALL" --provenance --access public --tag beta
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: publish
         if: github.event.release.prerelease == false
         working-directory: packages/web
         run: npm publish "$TARBALL" --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
