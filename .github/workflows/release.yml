@@ -50,9 +50,10 @@ jobs:
       # implemented in the npm CLI and pnpm has neither -- `pnpm publish
       # --provenance` is accepted and silently does nothing.
       #
-      # npm >= 11.5.1 is the floor for Trusted Publishing and it requires Node
-      # >= 20.17, above the 18.16.1 in .nvmrc. The tarball is already built by
-      # this point, so the Node version here only affects the upload.
+      # npm >= 11.5.1 is the floor for Trusted Publishing, and npm documents Node
+      # 22.14+ alongside it -- well above the 18.16.1 in .nvmrc. The tarball is
+      # already built by this point, so the Node version here only affects the
+      # upload, not what ships.
       - name: Set up Node for publishing
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -62,11 +63,18 @@ jobs:
       - name: Upgrade npm CLI
         run: npm install -g npm@11
 
-      # NODE_AUTH_TOKEN is still here on purpose. Provenance works with token
-      # auth, so this step is independent of Trusted Publishing. Dropping the
-      # token requires a Trusted Publisher to be registered for this package
-      # first, or the next release fails with ENEEDAUTH -- that removal is the
-      # follow-up, after a green publish confirms OIDC works.
+      # NODE_AUTH_TOKEN is still here on purpose, as a fallback rather than as
+      # the intended path. npm detects OIDC environments and uses them "before
+      # falling back to traditional tokens", so with a Trusted Publisher
+      # registered for this package the publish goes over OIDC and the token is
+      # never touched. If that registration is wrong, the token keeps the release
+      # from failing instead of turning a misconfiguration into an outage.
+      #
+      # It comes out once a release confirms OIDC was actually used -- the tell
+      # is `_npmUser: GitHub Actions` on the new version. The stronger follow-up
+      # is npmjs.com's "Require two-factor authentication and disallow tokens" on
+      # the package, which shuts the fallback door for good; deleting the secret
+      # alone only removes this workflow's copy of the key.
       - name: publish (beta)
         if: github.event.release.prerelease == true
         working-directory: packages/web
