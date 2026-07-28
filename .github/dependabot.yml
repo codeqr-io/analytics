@@ -1,0 +1,50 @@
+version: 2
+
+updates:
+  # Everything that can reach someone outside this repo: the published npm
+  # package (packages/web), the CDN bundle (packages/script), and the root
+  # manifest that pins the toolchain.
+  #
+  # Deliberately NOT grouped. An update here ships, so each one should be read
+  # on its own rather than arriving in a batch nobody opens.
+  - package-ecosystem: npm
+    directories:
+      - '/'
+      - '/packages/*'
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+
+  # The example apps. All three manifests are `private: true`; they are never
+  # published and never deployed. Roughly half of the ~108 open alerts live
+  # here, which is most of what makes the Dependabot page unreadable.
+  #
+  # Grouped into one PR a week: the examples stay current instead of rotting,
+  # and they stop burying the alerts that do reach customers. Silencing them
+  # would have done the second half without the first.
+  - package-ecosystem: npm
+    directories:
+      - '/apps/*'
+    schedule:
+      interval: weekly
+    groups:
+      example-apps:
+        patterns:
+          - '*'
+
+  # Workflow actions are pinned by commit SHA. A pinned SHA never picks up an
+  # upstream fix on its own, so without something maintaining them the pins
+  # simply rot -- trading a mutable tag for a frozen one.
+  #
+  # Expected but NOT yet verified: that Dependabot bumps a SHA-pinned action
+  # and the trailing `# vX.Y.Z` comment together. The GitHub docs do not say so
+  # either way. The first PR this opens settles it; if it cannot, the pins need
+  # a different maintenance story.
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns:
+          - '*'
