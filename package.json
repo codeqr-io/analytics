@@ -7,7 +7,7 @@
   },
   "license": "MPL-2.0",
   "scripts": {
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "prettier": "@vercel/style-guide/prettier",
   "dependencies": {
@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "@vercel/style-guide": "^5.0.1",
-    "husky": "^8.0.3",
+    "husky": "^9.1.7",
     "prettier": "3.9.6",
     "typescript": "^5.1.6"
   },
