@@ -61,7 +61,7 @@ The app uses the complete script with all features:
     outbound: 'example.com,other.com,sub.example.com',
   }}
   scriptProps={{
-    src: CODEQR_ANALYTICS_SCRIPT_URL.replace('script.js', 'script.site-visit.outbound-domains.conversion.js'),
+    src: CODEQR_ANALYTICS_SCRIPT_URL.replace('script.js', 'script.site-visit.outbound-domains.conversion-tracking.js'),
   }}
 />
 ```
@@ -79,10 +79,10 @@ The app demonstrates the complete script variant, but you can use any of these:
 2. **`script.site-visit.js`** - Base + site visit tracking
 3. **`script.outbound-domains.js`** - Base + outbound domain tracking
 4. **`script.site-visit.outbound-domains.js`** - Complete feature set
-5. **`script.conversion.js`** - Base + conversion tracking
-6. **`script.site-visit.conversion.js`** - Base + site visit + conversion tracking
-7. **`script.outbound-domains.conversion.js`** - Base + outbound domains + conversion tracking
-8. **`script.site-visit.outbound-domains.conversion.js`** - Complete feature set + conversion tracking
+5. **`script.conversion-tracking.js`** - Base + conversion tracking
+6. **`script.site-visit.conversion-tracking.js`** - Base + site visit + conversion tracking
+7. **`script.outbound-domains.conversion-tracking.js`** - Base + outbound domains + conversion tracking
+8. **`script.site-visit.outbound-domains.conversion-tracking.js`** - Complete feature set + conversion tracking
 
 ## Conversion Tracking Methods
 
@@ -139,7 +139,7 @@ pnpm test:ui
 Set up your environment variables in `.env.local`:
 
 ```env
-CODEQR_ANALYTICS_SCRIPT_URL=https://cdn.codeqr.io/analytics/script.site-visit.outbound-domains.conversion.js
+CODEQR_ANALYTICS_SCRIPT_URL=https://cdn.codeqr.io/analytics/script.site-visit.outbound-domains.conversion-tracking.js
 ```
 
 ## API Endpoints
