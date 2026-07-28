@@ -2,6 +2,14 @@ name: Publish
 on:
   release:
     types: [published]
+
+# id-token is what lets npm attach a provenance attestation to the tarball, and
+# is also the mechanism Trusted Publishing uses once one is registered for
+# @codeqr/analytics on npmjs.com. contents: read is all the rest of the job needs.
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -12,24 +20,63 @@ jobs:
       - name: Install
         uses: ./.github/composite-actions/install
 
-      # - name: lint
-      #   run: pnpm -r lint
+      # Scoped to the package that actually gets published. `pnpm -r lint` fails
+      # in apps/nextjs, whose .eslintrc.json extends `next/babel` and no longer
+      # resolves; those apps are examples, are private, and are not published.
+      # Gating a release on them is how this step ended up commented out in the
+      # first place.
+      - name: lint
+        run: pnpm --filter @codeqr/analytics lint
 
       - name: type-check
         run: pnpm -r type-check
 
-      # - name: prettier
-      #   run: pnpm prettier -c .
+      - name: prettier
+        run: pnpm prettier -c .
 
       - name: build
         run: pnpm --filter @codeqr/analytics build
 
-      - run: pnpm --filter @codeqr/analytics publish --tag beta --no-git-checks
+      # pnpm builds the tarball because it is what rewrites `workspace:` ranges
+      # into real versions: packages/web devDepends on @codeqr/eslint-config at
+      # `workspace:0.0.0`, which npm would otherwise publish verbatim.
+      - name: pack
+        working-directory: packages/web
+        run: |
+          tarball=$(pnpm pack | tail -1)
+          echo "TARBALL=$tarball" >> "$GITHUB_ENV"
+
+      # npm does the upload, not pnpm. Provenance and Trusted Publishing are
+      # implemented in the npm CLI and pnpm has neither -- `pnpm publish
+      # --provenance` is accepted and silently does nothing.
+      #
+      # npm >= 11.5.1 is the floor for Trusted Publishing and it requires Node
+      # >= 20.17, above the 18.16.1 in .nvmrc. The tarball is already built by
+      # this point, so the Node version here only affects the upload.
+      - name: Set up Node for publishing
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm CLI
+        run: npm install -g npm@11
+
+      # NODE_AUTH_TOKEN is still here on purpose. Provenance works with token
+      # auth, so this step is independent of Trusted Publishing. Dropping the
+      # token requires a Trusted Publisher to be registered for this package
+      # first, or the next release fails with ENEEDAUTH -- that removal is the
+      # follow-up, after a green publish confirms OIDC works.
+      - name: publish (beta)
         if: github.event.release.prerelease == true
+        working-directory: packages/web
+        run: npm publish "$TARBALL" --provenance --access public --tag beta
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - run: pnpm --filter @codeqr/analytics publish --no-git-checks
+      - name: publish
         if: github.event.release.prerelease == false
+        working-directory: packages/web
+        run: npm publish "$TARBALL" --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
