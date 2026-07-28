@@ -23,7 +23,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "autoprefixer": "^10.4.19",
+    "autoprefixer": "^10.5.4",
     "dotenv": "^16.5.0",
     "eslint": "^8",
     "eslint-config-next": "15.5.15",
