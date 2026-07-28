@@ -1,0 +1,55 @@
+name: CI
+
+# This repository had no pull request CI at all. deploy-script.yml runs on push,
+# release.yml runs on release, and the `protect-main` ruleset required no status
+# checks -- so `main` required a pull request and then verified nothing in it.
+# That is review, not verification, and the two are easy to confuse once the
+# "requires a pull request" box is ticked.
+#
+# It matters most for dependency updates: a single grouped Dependabot PR can
+# carry Next 15 -> 16, Tailwind 3 -> 4 and TypeScript 5 -> 7 across the example
+# apps, and without this nothing would run to find out they stopped building.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Superseded pull request runs are worth cancelling; a run against main is
+  # not -- that one is the record of whether main is green.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
+
+      - name: Install
+        uses: ./.github/composite-actions/install
+
+      # Recursive here, unlike release.yml, which scopes lint to the published
+      # package. Different questions: a release should not be blocked by an
+      # example app, but a pull request that breaks one should say so.
+      - name: lint
+        run: pnpm -r lint
+
+      - name: type-check
+        run: pnpm -r type-check
+
+      - name: prettier
+        run: pnpm prettier -c .
+
+      - name: build the published package
+        run: pnpm --filter @codeqr/analytics build
+
+      # The CDN bundle. Not published to npm, but it is the artifact that ends
+      # up in our customers' end users' browsers, so a build failure here is the
+      # most expensive one in the repo.
+      - name: build the CDN bundle
+        run: pnpm --filter @codeqr/analytics-script build
