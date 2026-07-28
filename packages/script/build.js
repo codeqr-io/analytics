@@ -18,7 +18,20 @@ const combineFiles = (files) => {
 // Ensure dist/analytics exists
 fs.mkdirSync(path.join(__dirname, 'dist/analytics'), { recursive: true });
 
-// Copy _redirects to dist folder
+// Copy _redirects to dist folder.
+//
+// This is the only thing that puts redirect rules on the CDN. They are not
+// configured in the Cloudflare dashboard: the deploy is
+// `wrangler pages deploy dist`, which ships whatever is in dist, and Pages
+// reads _redirects from the root of the uploaded directory.
+//
+// Two consequences worth knowing before you touch this:
+//
+//   - Editing the rules means editing public/_redirects and shipping a build.
+//     Changing them in the dashboard would be silently undone by the next
+//     deploy.
+//   - Recreating the Pages project needs no redirect setup at all. The first
+//     deploy restores the rules along with the bundles.
 fs.copyFileSync(
   path.join(__dirname, 'public/_redirects'),
   path.join(__dirname, 'dist/_redirects'),
