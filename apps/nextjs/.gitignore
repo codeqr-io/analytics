@@ -9,6 +9,13 @@
 # testing
 /coverage
 
+# playwright output -- these were committed by accident, including a failure
+# artifact from a track-visit run
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # next.js
 /.next/
 /out/
