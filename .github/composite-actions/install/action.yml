@@ -3,20 +3,35 @@ description: 'Sets up Node.js and runs install'
 runs:
   using: composite
   steps:
+    # No `registry-url` here on purpose. This action installs and builds; it
+    # never publishes. `registry-url` is what makes setup-node write an .npmrc
+    # containing `//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}`, and
+    # setup-node v7 stopped exporting the dummy NODE_AUTH_TOKEN that used to
+    # satisfy it. pnpm then warns on *stdout* for every command:
+    #
+    #   WARN Issue while reading ".npmrc". Failed to replace env in config:
+    #   ${NODE_AUTH_TOKEN}
+    #
+    # which broke the store-path step below, since it captures stdout into
+    # GITHUB_OUTPUT. release.yml does its own setup-node with registry-url
+    # right before publishing, which is where that input belongs.
     - name: Set up Node.js
       uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
         node-version-file: '.nvmrc'
-        registry-url: 'https://registry.npmjs.org'
 
     - name: Install pnpm with corepack
       shell: bash
       run: corepack enable && pnpm --version
 
+    # `tail -1` and the redirect are belt and braces: any pnpm warning on
+    # stdout would otherwise land in GITHUB_OUTPUT as a line without an `=`,
+    # and the step fails with `Invalid format` naming a path that looks
+    # perfectly fine -- which is a slow thing to read.
     - name: Get pnpm store directory
       id: pnpm-cache
       shell: bash
-      run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      run: echo "STORE_PATH=$(pnpm store path 2>/dev/null | tail -1)" >> $GITHUB_OUTPUT
 
     - name: Restore pnpm global cache
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
