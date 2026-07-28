@@ -1,9 +1,20 @@
 name: Deploy Analytics Script to Cloudflare Pages
 
+# `branches` is not optional here. Without it, a push to ANY branch touching
+# packages/script/** ships straight to the production Cloudflare Pages project,
+# which serves cdn.codeqr.io/analytics/script*.js — code that runs in our
+# customers' end users' browsers, on pages with forms. It already happened: the
+# v0.2.0 ref deployed successfully without going through main, and both a
+# feature branch and a Dependabot branch triggered this workflow.
 on:
   push:
+    branches: [main]
     paths:
       - 'packages/script/**'
+
+# The deploy job holds production CDN credentials; give it nothing else.
+permissions:
+  contents: read
 
 jobs:
   deploy:
