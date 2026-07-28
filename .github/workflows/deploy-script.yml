@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
 
       - name: Install
         uses: ./.github/composite-actions/install
@@ -39,7 +39,7 @@ jobs:
 
       - name: Deploy to Cloudflare Pages
         id: cloudflare-deploy
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3.15.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_PAGES_API_KEY }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -74,7 +74,7 @@ jobs:
       # deliverable, and this step must not be able to fail the run.
       - name: Dispatch deployment event
         continue-on-error: true
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3.0.0
         with:
           event-type: analytics-script-deployed
           client-payload: '{"deployment_url": "${{ steps.cloudflare-deploy.outputs.deployment-url }}"}'
