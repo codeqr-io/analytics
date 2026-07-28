@@ -18,10 +18,20 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
   # Superseded pull request runs are worth cancelling; a run against main is
-  # not -- that one is the record of whether main is green.
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # not -- that one is the record of whether that commit is green.
+  #
+  # The uniqueness has to live in the GROUP, not in cancel-in-progress. The
+  # previous form was `cancel-in-progress: ${{ github.event_name ==
+  # 'pull_request' }}`, and it cancelled main runs anyway: on 2026-07-28 four
+  # merges in under a minute produced two `push` runs on main that were killed
+  # the instant the next one started, before any job began. An expression there
+  # reaches the runner as a string, and a non-empty "false" is truthy.
+  #
+  # Giving push runs a group of their own per run_id makes them incapable of
+  # cancelling each other, without depending on how an expression is coerced.
+  group: ci-${{ github.ref }}-${{ github.event_name == 'pull_request' && 'pr' || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   verify:

@@ -65,8 +65,19 @@ updates:
   # CDN. If that breaks CI, nothing says which of the three did it, which is the
   # exact attribution problem the SHA pinning PR avoided by not upgrading. Minor
   # and patch batch fine; majors get read one at a time.
+  # `directory: '/'` covers .github/workflows only. Composite actions live
+  # outside it and were invisible to Dependabot: while it was proposing
+  # setup-node v4.4.0 -> v7.0.0 in release.yml, the copy inside
+  # composite-actions/install sat on v3.9.1 and was never mentioned. Same for
+  # actions/cache on v3.5.0. Both are reached by every workflow in the repo,
+  # since every one of them calls this action.
+  #
+  # A composite action needs its own entry, pointing at the directory that
+  # holds its action.yml.
   - package-ecosystem: github-actions
-    directory: '/'
+    directories:
+      - '/'
+      - '/.github/composite-actions/install'
     schedule:
       interval: weekly
     open-pull-requests-limit: 3
