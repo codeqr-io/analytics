@@ -1,5 +1,9 @@
 version: 2
 
+# Revised after the first run, which opened nine pull requests at once -- the
+# opposite of what this file is for. Two changes: real caps on every stream, and
+# major action bumps kept out of the grouped PR.
+
 updates:
   # Everything that can reach someone outside this repo: the published npm
   # package (packages/web), the CDN bundle (packages/script), and the root
@@ -13,38 +17,54 @@ updates:
       - '/packages/*'
     schedule:
       interval: weekly
-    open-pull-requests-limit: 10
+    # Was 10, above the default of 5. There is no reading of three open update
+    # PRs against published code that is improved by having ten.
+    open-pull-requests-limit: 3
 
   # The example apps. All three manifests are `private: true`; they are never
-  # published and never deployed. Roughly half of the ~108 open alerts live
-  # here, which is most of what makes the Dependabot page unreadable.
+  # published and never deployed.
   #
-  # Grouped into one PR a week: the examples stay current instead of rotting,
-  # and they stop burying the alerts that do reach customers. Silencing them
-  # would have done the second half without the first.
+  # KNOWN NOT TO WORK YET: on the first run this group did not take -- next,
+  # @playwright/test and postcss each opened their own PR despite matching
+  # `/apps/*` and nothing else. The github-actions group below did work, so the
+  # syntax is not the problem. Unexplained; the Dependabot run log under
+  # Insights > Dependency graph is where the answer is. The low cap below limits
+  # the damage until then.
   - package-ecosystem: npm
     directories:
       - '/apps/*'
     schedule:
       interval: weekly
+    open-pull-requests-limit: 2
     groups:
       example-apps:
+        applies-to: version-updates
         patterns:
           - '*'
 
   # Workflow actions are pinned by commit SHA. A pinned SHA never picks up an
-  # upstream fix on its own, so without something maintaining them the pins
-  # simply rot -- trading a mutable tag for a frozen one.
+  # upstream fix on its own, so without this the pins rot.
   #
-  # Expected but NOT yet verified: that Dependabot bumps a SHA-pinned action
-  # and the trailing `# vX.Y.Z` comment together. The GitHub docs do not say so
-  # either way. The first PR this opens settles it; if it cannot, the pins need
-  # a different maintenance story.
+  # CONFIRMED by the first run: Dependabot rewrites the SHA and the trailing
+  # `# vX.Y.Z` comment together, so the pins are maintainable. That was the open
+  # question when this file was added.
+  #
+  # `update-types` is the fix for what that same PR got wrong. Grouping every
+  # SemVer level put checkout v3 -> v7, setup-node v4 -> v7 and wrangler-action
+  # v3 -> v4 into one pull request -- including the action that deploys to the
+  # CDN. If that breaks CI, nothing says which of the three did it, which is the
+  # exact attribution problem the SHA pinning PR avoided by not upgrading. Minor
+  # and patch batch fine; majors get read one at a time.
   - package-ecosystem: github-actions
     directory: '/'
     schedule:
       interval: weekly
+    open-pull-requests-limit: 3
     groups:
       github-actions:
+        applies-to: version-updates
         patterns:
           - '*'
+        update-types:
+          - minor
+          - patch
