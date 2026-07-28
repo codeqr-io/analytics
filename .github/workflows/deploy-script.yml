@@ -38,7 +38,6 @@ jobs:
         run: pnpm --filter @codeqr/analytics-script build
 
       - name: Deploy to Cloudflare Pages
-        id: cloudflare-deploy
         uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3.15.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_PAGES_API_KEY }}
@@ -57,24 +56,17 @@ jobs:
           workingDirectory: packages/script
           packageManager: pnpm
 
-      # Dispatch a deployment event so playwright.yml can test the bundle that
-      # was just uploaded.
+      # There is deliberately no test step after the deploy.
       #
-      # This has never worked. peter-evans/repository-dispatch falls back to
-      # GITHUB_TOKEN, and events created with GITHUB_TOKEN do not start new
-      # workflow runs — playwright.yml has had zero runs since it was added in
-      # May 2025, including after the two dispatches that reported success on
-      # 2026-06-19. Since `permissions: contents: read` above, the POST itself is
-      # unauthorized too. Reviving this needs a PAT; the alternative is deleting
-      # this step along with playwright.yml. Until one of the two happens, the
-      # Playwright suite is not part of this pipeline, whatever the step name
-      # suggests.
+      # There used to be a `repository_dispatch` here that was supposed to kick
+      # off playwright.yml against the freshly uploaded bundle. It never once
+      # worked: the action falls back to GITHUB_TOKEN, and events created with
+      # GITHUB_TOKEN do not start new workflow runs, so playwright.yml recorded
+      # zero runs between May 2025 and its removal — including after two
+      # dispatches that reported success on 2026-06-19.
       #
-      # continue-on-error stays either way: the Cloudflare deploy above is the
-      # deliverable, and this step must not be able to fail the run.
-      - name: Dispatch deployment event
-        continue-on-error: true
-        uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3.0.0
-        with:
-          event-type: analytics-script-deployed
-          client-payload: '{"deployment_url": "${{ steps.cloudflare-deploy.outputs.deployment-url }}"}'
+      # The Playwright specs themselves are alive and unaffected; they live in
+      # apps/nextjs/tests and run with `pnpm --filter nextjs test`. What was
+      # removed is the CI wiring that pretended to run them. If this deploy
+      # should be gated on E2E, the way to do it is a job that runs the specs
+      # directly against the deployment URL, not a dispatch to another workflow.
