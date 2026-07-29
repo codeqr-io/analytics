@@ -62,6 +62,20 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: 'next'
         update-types: ['version-update:semver-major']
+      # Tailwind 4 is a config and CSS-import rewrite, not a bump. Verified:
+      # with tailwindcss 4.3.3 and the current `@tailwind base/components/
+      # utilities` directives, `next build` fails on app/globals.css and the
+      # emitted stylesheet drops from 17241 to 2063 bytes with zero utilities.
+      #
+      # CI does not catch it. ci.yml builds the two published artifacts, not the
+      # example apps, so the bump goes green while the app is broken.
+      - dependency-name: 'tailwindcss'
+        update-types: ['version-update:semver-major']
+      # @vercel/style-guide 6.0.0 declares
+      # `@next/eslint-plugin-next: ">=12.3.0 <15.0.0-0"`, so 15 and 16 violate
+      # the peer range. Same knot as eslint above, same exit.
+      - dependency-name: '@next/eslint-plugin-next'
+        update-types: ['version-update:semver-major']
     groups:
       minor-and-patch:
         applies-to: version-updates

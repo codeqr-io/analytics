@@ -8,7 +8,20 @@ name: CI
 #
 # It matters most for dependency updates: a single grouped Dependabot PR can
 # carry Next 15 -> 16, Tailwind 3 -> 4 and TypeScript 5 -> 7 across the example
-# apps, and without this nothing would run to find out they stopped building.
+# apps, and without this nothing would run to find out they stopped compiling.
+#
+# KNOWN GAP, so nobody reads more coverage into this than exists: the two build
+# steps below build the published package and the CDN bundle. They do NOT run
+# `next build` in apps/*. lint and type-check do cover the apps, so a type or
+# lint error there is caught -- but a change that only breaks the bundler is
+# not. tailwindcss 3 -> 4 is the worked example: it goes green here and leaves
+# apps/nextjs unable to build at all.
+#
+# Building the apps here was tried and is not currently viable:
+# `apps/nextjs-reverse-proxy` hangs on `next build`, which is its own problem
+# and needs fixing before this gap can close. Until then, majors on app-only
+# dependencies are held back in dependabot.yml rather than pretended to be
+# verified.
 on:
   pull_request:
   push:
