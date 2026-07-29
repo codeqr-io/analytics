@@ -27,6 +27,21 @@ jobs:
   # Runs on every push to main. Most of the time it just opens or updates the
   # release pull request and stops there; `releases_created` is only true on the
   # push that merges that pull request.
+  #
+  # This job needs a PAT and the publish job below deliberately does not.
+  #
+  # GITHUB_TOKEN cannot open the release pull request: the org enforces
+  # "Allow GitHub Actions to create and approve pull requests" off, and the
+  # setting is locked at the repository level. The first run of this workflow got
+  # as far as creating the branch and the commit, then failed with "GitHub
+  # Actions is not permitted to create or approve pull requests".
+  #
+  # So the token is a real long-lived credential, which M2 spent three PRs
+  # removing -- but the two are not the same credential. This one is
+  # fine-grained, scoped to this repository alone, and can do exactly two things:
+  # write contents and write pull requests, here. It cannot publish anything. The
+  # npm upload below still authenticates by OIDC with no token at all, which is
+  # the credential that mattered.
   release-please:
     runs-on: ubuntu-latest
     permissions:
@@ -38,6 +53,7 @@ jobs:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
         with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
