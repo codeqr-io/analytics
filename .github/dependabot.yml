@@ -5,46 +5,41 @@ version: 2
 # major action bumps kept out of the grouped PR.
 
 updates:
-  # Everything that can reach someone outside this repo: the published npm
-  # package (packages/web), the CDN bundle (packages/script), and the root
-  # manifest that pins the toolchain.
+  # ONE npm stream, at the workspace root, and the root is not a preference.
   #
-  # Deliberately NOT grouped. An update here ships, so each one should be read
-  # on its own rather than arriving in a batch nobody opens.
+  # Dependabot's pnpm support refuses to run inside a workspace member:
+  #
+  #   misconfigured_tooling: pnpm
+  #   "Updating workspaces from inside a workspace subdirectory is not
+  #    supported. Both `pnpm-lock.yaml` and `pnpm-workspace.yaml` exist in a
+  #    parent directory. Dependabot should only update from the root workspace."
+  #
+  # This file used to list '/packages/*' and '/apps/*' as well, and that single
+  # mistake produced every symptom this config has had:
+  #
+  #   - the example-apps job failed on every run, because both of its
+  #     directories are workspace members
+  #   - PRs opened from a member directory carried a package.json change and no
+  #     pnpm-lock.yaml, so CI failed at Install with ERR_PNPM_OUTDATED_LOCKFILE
+  #     -- #26, #28 and #29 were all this, not stale branches
+  #   - the same upgrade arrived twice, once from the root pass and once from the
+  #     member pass: #20/#29, #40/#44, #41/#45. Only the root one was mergeable.
+  #
+  # A pass at the root already sees every workspace member and updates their
+  # manifests, which is why #22 and #24 could change packages/web/package.json
+  # and the lockfile together. The member entries added nothing and broke this.
+  #
+  # Grouping is now by SemVer level rather than by directory, because directory
+  # is no longer something this stream can express. That trade is acceptable:
+  # what makes an update worth reading on its own is that it is a major, not
+  # which folder it landed in. Majors still arrive one at a time.
   - package-ecosystem: npm
-    directories:
-      - '/'
-      - '/packages/*'
+    directory: '/'
     schedule:
       interval: weekly
-    # Was 10, above the default of 5. There is no reading of three open update
-    # PRs against published code that is improved by having ten.
-    open-pull-requests-limit: 3
-
-  # The example apps. All three manifests are `private: true`; they are never
-  # published and never deployed.
-  #
-  # The grouping WORKS -- confirmed on the second run, which opened a single
-  # `example-apps` PR across all three directories. The first run's split into
-  # separate PRs was a first-run artifact, not a syntax problem.
-  #
-  # `update-types` is here for the same reason it is on github-actions below.
-  # Ungrouped by SemVer level, the group's first real PR batched next 15 -> 16,
-  # tailwindcss 3 -> 4, typescript 5 -> 7, eslint 8 -> 10 and cookie 0.6 -> 2.0
-  # into one change. Tailwind 4 alone is a config and CSS-import rewrite, so the
-  # batch was unmergeable as a unit and told you nothing about which piece was
-  # the problem.
-  #
-  # Minor and patch batch fine and keep the alert surface down. Majors on these
-  # apps are a rewrite, not a bump, and should be opened deliberately.
-  - package-ecosystem: npm
-    directories:
-      - '/apps/*'
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 2
+    open-pull-requests-limit: 5
     groups:
-      example-apps:
+      minor-and-patch:
         applies-to: version-updates
         patterns:
           - '*'
@@ -65,6 +60,7 @@ updates:
   # CDN. If that breaks CI, nothing says which of the three did it, which is the
   # exact attribution problem the SHA pinning PR avoided by not upgrading. Minor
   # and patch batch fine; majors get read one at a time.
+  #
   # `directory: '/'` covers .github/workflows only. Composite actions live
   # outside it and were invisible to Dependabot: while it was proposing
   # setup-node v4.4.0 -> v7.0.0 in release.yml, the copy inside
@@ -73,7 +69,8 @@ updates:
   # since every one of them calls this action.
   #
   # A composite action needs its own entry, pointing at the directory that
-  # holds its action.yml.
+  # holds its action.yml. Unlike npm above, this ecosystem has no workspace and
+  # no lockfile, so extra directories are exactly the right tool here.
   - package-ecosystem: github-actions
     directories:
       - '/'
