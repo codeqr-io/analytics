@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@codeqr/analytics": "workspace:*",
-    "next": "15.5.18",
+    "next": "16.2.12",
     "react": "^19",
     "react-dom": "^19"
   },
