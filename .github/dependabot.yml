@@ -38,6 +38,30 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # These three cannot go green, and saying so here is the only way to stop
+    # them being reopened every week.
+    #
+    # No published version of @vercel/style-guide supports eslint 9 -- 6.0.0,
+    # the latest, still declares `eslint: ">=8.48.0 <9"`. eslint-config-next 16
+    # declares `eslint: ">=9.0.0"`, and next 16 pulls it in. So eslint 9/10 and
+    # next 16 are mutually exclusive with the shared config this repo lints
+    # with, and no ordering of merges resolves it.
+    #
+    # Both were verified failing at `lint`, not at install: eslint 10 crashes
+    # the eslint 8 plugin generation in packages/web, and next 16's `next lint`
+    # refuses eslint 8 in the example apps.
+    #
+    # Getting past this means replacing @vercel/style-guide with a config that
+    # supports flat config. That is a decision about how this repo lints, and it
+    # deserves to be opened deliberately rather than arriving as a red pull
+    # request every Monday. Delete this block when that happens.
+    ignore:
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'eslint-config-next'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'next'
+        update-types: ['version-update:semver-major']
     groups:
       minor-and-patch:
         applies-to: version-updates
