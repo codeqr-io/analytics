@@ -6,12 +6,14 @@ import type {
   TrackLeadInput,
   TrackSaleInput,
 } from './types';
-import { isCodeQRAnalyticsReady } from './utils';
+import { isCodeQRAnalyticsAvailable } from './utils';
 
 interface PartnerData {
   partner?: Partner | null;
   discount?: Discount | null;
 }
+
+type TrackMethod = 'trackClick' | 'trackLead' | 'trackSale';
 
 declare global {
   interface Window {
@@ -22,6 +24,27 @@ declare global {
       trackSale: (event: TrackSaleInput) => void;
     };
   }
+}
+
+// trackLead and trackSale only exist on the loaded script when the
+// conversion-tracking variant is in use. Warn instead of throwing into the
+// host app's render tree.
+function call<T>(method: TrackMethod, event: T): void {
+  if (!isCodeQRAnalyticsAvailable()) {
+    return;
+  }
+
+  const fn = window.codeqrAnalytics[method] as ((input: T) => void) | undefined;
+
+  if (typeof fn !== 'function') {
+    // eslint-disable-next-line no-console -- a misconfiguration worth surfacing
+    console.warn(
+      `[CodeQR Web Analytics] ${method}() is unavailable. It ships with the conversion-tracking script, which loads when publishableKey is set.`,
+    );
+    return;
+  }
+
+  fn(event);
 }
 
 /**
@@ -53,41 +76,29 @@ export function useAnalytics(): PartnerData & {
   });
 
   const initialize = useCallback(() => {
-    if (!isCodeQRAnalyticsReady()) {
+    if (!isCodeQRAnalyticsAvailable()) {
       return;
     }
 
     window.codeqrAnalytics('ready', () => {
-      const { partner, discount } = window.CodeQRAnalytics as {
-        partner: Partner | null;
-        discount: Discount | null;
-      };
-      setData({ partner, discount });
+      const ready = window.CodeQRAnalytics as PartnerData | undefined;
+      setData({
+        partner: ready?.partner ?? null,
+        discount: ready?.discount ?? null,
+      });
     });
   }, []);
 
   const trackClick = useCallback((event: TrackClickInput) => {
-    if (!isCodeQRAnalyticsReady()) {
-      return;
-    }
-
-    window.codeqrAnalytics.trackClick(event);
+    call('trackClick', event);
   }, []);
 
   const trackLead = useCallback((event: TrackLeadInput) => {
-    if (!isCodeQRAnalyticsReady()) {
-      return;
-    }
-
-    window.codeqrAnalytics.trackLead(event);
+    call('trackLead', event);
   }, []);
 
   const trackSale = useCallback((event: TrackSaleInput) => {
-    if (!isCodeQRAnalyticsReady()) {
-      return;
-    }
-
-    window.codeqrAnalytics.trackSale(event);
+    call('trackSale', event);
   }, []);
 
   useEffect(() => {
