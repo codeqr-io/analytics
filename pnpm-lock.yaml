@@ -83,8 +83,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/web
       cookie:
-        specifier: ^0.6.0
-        version: 0.6.0
+        specifier: ^2.0.1
+        version: 2.0.1
       next:
         specifier: 15.5.15
         version: 15.5.15(@babel/core@7.29.7)(react-dom@19.2.8)(react@19.2.8)
@@ -2780,9 +2780,9 @@ packages:
   /convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
 
-  /cookie@0.6.0:
-    resolution: {integrity: sha512-U71cyTamuh1CRNCfpGY6to28lxvNwPG4Guz/EVjgf3Jmzv0vlDp1atT9eS5dDjMYHucpHbWns6Lwf3BKz6svdw==}
-    engines: {node: '>= 0.6'}
+  /cookie@2.0.1:
+    resolution: {integrity: sha512-yuToqVvRrj6pfDXREyQAAv8SkAEk/8GS3jQRTiUMm66TVtBYmqQeoEjL2Lmq8Rpo6271vH76InTChTitEAm65w==}
+    engines: {node: '>=22'}
     dev: false
 
   /core-js-compat@3.49.0:
