@@ -4,7 +4,7 @@
   "private": true,
   "main": "index.js",
   "dependencies": {
-    "@next/eslint-plugin-next": "13.4.7"
+    "@next/eslint-plugin-next": "13.5.11"
   },
   "devDependencies": {
     "@vercel/style-guide": "6.0.0",
