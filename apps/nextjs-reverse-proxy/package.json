@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@codeqr/analytics": "workspace:*",
-    "next": "15.5.15",
+    "next": "15.5.22",
     "react": "^19",
     "react-dom": "^19"
   },
@@ -19,7 +19,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^8",
-    "eslint-config-next": "15.5.15",
+    "eslint-config-next": "15.5.22",
     "typescript": "^5"
   }
 }
