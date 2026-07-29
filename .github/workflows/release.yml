@@ -1,18 +1,57 @@
-name: Publish
-on:
-  release:
-    types: [published]
+name: Release
 
-# id-token is what lets npm attach a provenance attestation to the tarball, and
-# is also the mechanism Trusted Publishing uses once one is registered for
-# @codeqr/analytics on npmjs.com. contents: read is all the rest of the job needs.
-permissions:
-  contents: read
-  id-token: write
+# release-please and the npm publish live in one file, and the filename matters.
+#
+# npm's Trusted Publisher for @codeqr/analytics is registered against this
+# repository AND this workflow filename. Splitting the publish into a second
+# workflow would break authentication silently: the registration would stop
+# matching and the publish would fail with ENEEDAUTH.
+#
+# That rules out the usual release-please shape, where one workflow tags the
+# release and a second one runs `on: release`. It would not have worked here
+# anyway -- a GitHub Release created with GITHUB_TOKEN does not start a new
+# workflow run. This repo has already paid for that lesson once: a
+# repository_dispatch in deploy-script.yml reported success for a year and never
+# triggered playwright.yml a single time. Making the two-workflow shape work
+# needs a PAT, which is exactly the long-lived static credential this workflow
+# was rebuilt to get rid of.
+on:
+  push:
+    branches: [main]
+
+# Nothing by default. Each job asks for what it needs and no more -- in
+# particular the publish job never gets `contents: write`.
+permissions: {}
 
 jobs:
-  release:
+  # Runs on every push to main. Most of the time it just opens or updates the
+  # release pull request and stops there; `releases_created` is only true on the
+  # push that merges that pull request.
+  release-please:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      released: ${{ steps.release.outputs.releases_created }}
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  # `releases_created` rather than `packages/web--release_created`: the config
+  # governs exactly one package, so "any release" and "the packages/web release"
+  # are the same event, and this avoids the bracket syntax a path containing `/`
+  # would otherwise need.
+  publish:
+    needs: release-please
+    if: needs.release-please.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -68,6 +107,15 @@ jobs:
       - name: Upgrade npm CLI
         run: npm install -g npm@11
 
+      # There is no `--tag beta` step any more, and its absence is deliberate.
+      #
+      # The previous version had one gated on `github.event.release.prerelease`.
+      # That field only exists on a `release` event, so under this trigger the
+      # step could never have fired -- it would have been one more piece of CI
+      # that looks like it does something and does not. release-please has no
+      # prerelease path configured here; if betas are wanted later, the way in is
+      # a prerelease config in release-please-config.json, not a dead `if`.
+      #
       # No NODE_AUTH_TOKEN, and no fallback to one.
       #
       # Auth is OIDC: a Trusted Publisher for @codeqr/analytics is registered
@@ -82,13 +130,7 @@ jobs:
       #
       # So if the Trusted Publisher registration is wrong, this step fails with
       # ENEEDAUTH and the release publishes nothing. That is recoverable -- fix
-      # the registration and re-run the workflow run for the same release.
-      - name: publish (beta)
-        if: github.event.release.prerelease == true
-        working-directory: packages/web
-        run: npm publish "$TARBALL" --provenance --access public --tag beta
-
+      # the registration and re-run this workflow run.
       - name: publish
-        if: github.event.release.prerelease == false
         working-directory: packages/web
         run: npm publish "$TARBALL" --provenance --access public
