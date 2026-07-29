@@ -2,6 +2,11 @@ export function isBrowser(): boolean {
   return typeof window !== 'undefined';
 }
 
-export function isCodeQRAnalyticsReady(): boolean {
-  return typeof window !== 'undefined' && Boolean(window.CodeQRAnalytics);
+// Checks the callable installed by inject(), not window.CodeQRAnalytics.
+// The callable queues; the data object only exists once the remote script runs.
+export function isCodeQRAnalyticsAvailable(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.codeqrAnalytics === 'function'
+  );
 }
