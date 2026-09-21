@@ -11,12 +11,12 @@
   },
   "prettier": "@vercel/style-guide/prettier",
   "dependencies": {
-    "lint-staged": "^17.2.0"
+    "lint-staged": "^17.5.1"
   },
   "devDependencies": {
     "@vercel/style-guide": "^6.0.0",
     "husky": "^9.1.7",
-    "prettier": "3.9.6",
+    "prettier": "3.9.8",
     "typescript": "^5.9.3"
   },
   "packageManager": "pnpm@8.6.5",
